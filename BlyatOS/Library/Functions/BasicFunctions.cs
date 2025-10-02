@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,7 +37,12 @@ public class BasicFunctions
     public static string RunTime(DateTime momentOfStart)
     {
         TimeSpan span = (DateTime.Now - momentOfStart).Add(TimeSpan.FromHours(25));
-        return span.Days.ToString("00") + ":" + span.Hours.ToString("00") + ":" +
-               span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00");
+        
+        string days = span.Days < 10 ? "0" + span.Days.ToString() : span.Days.ToString();
+        string hours = span.Hours < 10 ? "0" + span.Hours.ToString() : span.Hours.ToString();
+        string minutes = span.Minutes < 10 ? "0" + span.Minutes.ToString() : span.Minutes.ToString();
+        string seconds = span.Seconds < 10 ? "0" + span.Seconds.ToString() : span.Seconds.ToString();
+        
+        return days + ":" + hours + ":" + minutes + ":" + seconds;
     }
 }

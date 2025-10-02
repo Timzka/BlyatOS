@@ -5,6 +5,7 @@ using Cosmos.HAL;
 using Sys = Cosmos.System;
 using BlyatOS.Library.Startupthings;
 using BlyatOS.Library.Functions;
+using BadTetrisCS;
 
 namespace BlyatOS;
 
@@ -69,8 +70,9 @@ public class Kernel : Sys.Kernel
                 }
             case "tetris":
                 {
-                    Console.WriteLine("NOT IMPLEMENTED");
-
+                    //Console.WriteLine("NOT IMPLEMENTED");
+                    BadTetris game = new BadTetris();
+                    game.Run();
                     break;
                 }
             default:
