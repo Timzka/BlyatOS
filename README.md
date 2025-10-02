@@ -1,4 +1,4 @@
-BlyatOS: because other operating systems are just not made for gopniks!
+BlyatOS: because other operating systems are just not made for gopniks!  
 Faster than your coffee – boots in milliseconds.  
 Smokes a Cigarette on Startup for peak Efficiency!  
 No distractions – Tetris included, GUI excluded.  
