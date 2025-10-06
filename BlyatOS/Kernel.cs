@@ -33,7 +33,7 @@ public class Kernel : Sys.Kernel
             }
             c++;
         }
-        OnStartUp.RunLoadingScreenThing(); //could be removed, but it is cool
+        //OnStartUp.RunLoadingScreenThing(); //could be removed, but it is cool
         Console.WriteLine("BlyatOS booted successfully. Type /help for help");
         momentOfStart = DateTime.Now;
     }

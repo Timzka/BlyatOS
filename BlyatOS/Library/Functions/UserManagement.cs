@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 using BlyatOS.Library.Configs;
 using Cosmos.HAL;
 
@@ -68,6 +64,13 @@ internal class UserManagement
             newId++;
         }
         conf.Users.Add(new UsersConfig.User(uName, newId, password, role));
-        Console.WriteLine($"User {uName} created with ID {newId.ToString()} and role {role.ToString()}"); //role.Tostring geht nicht
+        string roleText = role switch
+        {
+            UsersConfig.URoles.SuperAdmin => "SuperAdmin",
+            UsersConfig.URoles.Admin => "Admin",
+            UsersConfig.URoles.User => "User",
+            _ => "Unknown"
+        };
+        Console.WriteLine($"User {uName} created with ID {newId.ToString()} and role {roleText}.");
     }
 }
