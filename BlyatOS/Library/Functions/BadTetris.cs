@@ -266,16 +266,7 @@ public class BadTetris
     private bool CanSpawn(TetrominoType type)
     {
         Tetromino tetromino = new Tetromino(type, FIELD_WIDTH / 2 - 2, 0);
-        for (int by = 0; by < 4; by++)
-            for (int bx = 0; bx < 4; bx++)
-                if (tetromino.GetShape(bx, by))
-                {
-                    int nx = tetromino.X + bx;
-                    int ny = tetromino.Y + by;
-                    if (nx < 0 || nx >= FIELD_WIDTH || ny < 0 || ny >= FIELD_HEIGHT) return false;
-                    if (GetField(nx, ny)) return false;
-                }
-        return true;
+        return tetromino.CanPlace(FIELD_WIDTH, FIELD_HEIGHT, field);
     }
 
     private bool CanMoveLeft(Tetromino block)
@@ -500,6 +491,10 @@ public class BadTetris
             inputState.RightHeld = false;
             inputState.DownHeld = false;
             inputState.RotateHeld = false;
+            inputState.LeftRepeatTime = 0;
+            inputState.RightRepeatTime = 0;
+            inputState.DownRepeatTime = 0;
+            inputState.RotateRepeatTime = 0;
         }
 
         return moved;
@@ -650,6 +645,10 @@ public class BadTetris
             inputState.RightHeld = false;
             inputState.DownHeld = false;
             inputState.RotateHeld = false;
+            inputState.LeftRepeatTime = 0;
+            inputState.RightRepeatTime = 0;
+            inputState.DownRepeatTime = 0;
+            inputState.RotateRepeatTime = 0;
         }
 
         return moved;

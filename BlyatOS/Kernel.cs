@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Cosmos.HAL;
@@ -6,15 +6,33 @@ using Sys = Cosmos.System;
 using BlyatOS.Library.Startupthings;
 using BlyatOS.Library.Functions;
 using BadTetrisCS;
+using BlyatOS.Library.Configs;
+using Microsoft.VisualBasic.FileIO;
+using System.Linq;
 
 namespace BlyatOS;
 
 public class Kernel : Sys.Kernel
 {
     DateTime momentOfStart;
-    string versionString = "Blyat version 1";
+    string versionString = "Blyat version 0.9";
+    private UsersConfig UsersConf = new UsersConfig();
+    private int CurrentUser;
     protected override void BeforeRun()
     {
+        Console.Clear();
+        int c = 0;
+        while (true)
+        {
+            if(c >= 5) Cosmos.System.Power.Shutdown();
+            int uid = UserManagement.Login(UsersConf);
+            if (uid != -1)
+            {
+                CurrentUser = uid;
+                break;
+            }
+            c++;
+        }
         OnStartUp.RunLoadingScreenThing(); //could be removed, but it is cool
         Console.WriteLine("BlyatOS booted successfully. Type /help for help");
         momentOfStart = DateTime.Now;
@@ -68,10 +86,45 @@ public class Kernel : Sys.Kernel
                     Console.Clear();
                     break;
                 }
+            case "logout":
+            case "lock":
+                {
+                    Console.WriteLine("Logging out...");
+                    Global.PIT.Wait(1000);
+                    int c = 0;
+                    while (true)
+                    {
+                        if (c >= 5) Cosmos.System.Power.Shutdown();
+                        int uid = UserManagement.Login(UsersConf);
+                        if (uid != -1)
+                        {
+                            CurrentUser = uid;
+                            break;
+                        }
+                        c++;
+                    }
+                    break;
+                }
             case "vodka":
                 {
+                    if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                    {
+                        Console.WriteLine("Missing Permissions");
+                        break;
+                    }
                     Console.WriteLine("Nyet, no vodka for you! //not implemented");
                     break;
+                }
+            case "createUser":
+                { 
+                    Console.Clear();
+                    if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.SuperAdmin))
+                    {
+                        Console.WriteLine("Missing Permissions");
+                        break;
+                    }
+                    UserManagement.CreateUser(UsersConf);
+                    break; 
                 }
             case "tetris":
                 {
