@@ -5,3 +5,12 @@ No distractions – Tetris included, GUI excluded.
 Stable as a brick – crashes are for amateurs.  
 Minimalist glory like in soviet times – ASCII art > fancy graphics.  
 Use BlyatOS responsibly: once you go Blyat, you never go back.
+
+Funktionen:
+--------
+[ ] Nutzerverwaltung\
+[ ] Speicherverwaltung\
+[ ] Schedulingsystem\
+[x] Tetris\
+[ ] Rechteverwaltung\
+[ ] Text editor
