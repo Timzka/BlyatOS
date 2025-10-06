@@ -18,7 +18,9 @@ public class BasicFunctions
             " \"runtime\"".PadRight(padding) + "show runtime\n" +
             " \"tetris\"".PadRight(padding) + "starts a game of tetris\n" +
             " \"reboot\"".PadRight(padding) + "reboot system\n" +
-            " \"exit\"".PadRight(padding) + "shutdown kernel"
+            " \"exit\"".PadRight(padding) + "shutdown kernel\n" +
+            " \"createUser\"".PadRight(padding) + "create a new user\n" +
+            " \"deleteUser\"".PadRight(padding) + "delete a user"
         );
     }
 

@@ -118,13 +118,28 @@ public class Kernel : Sys.Kernel
             case "createUser":
                 { 
                     Console.Clear();
-                    if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.SuperAdmin))
+                    // Admins and SuperAdmins allowed (SuperAdmin may also create Admins)
+                    var allowed = UsersConfig.Permissions.Admin; // includes Admin + SuperAdmin
+                    if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, allowed))
                     {
                         Console.WriteLine("Missing Permissions");
                         break;
                     }
-                    UserManagement.CreateUser(UsersConf);
+                    UserManagement.CreateUser(UsersConf, CurrentUser);
                     break; 
+                }
+            case "deleteUser":
+                {
+                    Console.Clear();
+                    // Admins and SuperAdmins allowed (rules enforced inside method)
+                    var allowed = UsersConfig.Permissions.Admin;
+                    if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, allowed))
+                    {
+                        Console.WriteLine("Missing Permissions");
+                        break;
+                    }
+                    UserManagement.DeleteUser(UsersConf, CurrentUser);
+                    break;
                 }
             case "tetris":
                 {
