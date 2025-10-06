@@ -68,9 +68,13 @@ public class Kernel : Sys.Kernel
                     Console.Clear();
                     break;
                 }
+            case "vodka":
+                {
+                    Console.WriteLine("Nyet, no vodka for you! //not implemented");
+                    break;
+                }
             case "tetris":
                 {
-                    //Console.WriteLine("NOT IMPLEMENTED");
                     BadTetris game = new BadTetris();
                     game.Run();
                     break;
