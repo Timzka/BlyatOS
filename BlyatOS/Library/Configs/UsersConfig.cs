@@ -33,9 +33,9 @@ internal class UsersConfig
 
     public enum URoles
     {
-        SuperAdmin,
+        User,
         Admin,
-        User
+        SuperAdmin,
     }
     public static class Permissions
     {

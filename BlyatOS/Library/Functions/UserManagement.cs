@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using BlyatOS.Library.Configs;
 using Cosmos.HAL;
+using static BlyatOS.Library.Configs.UsersConfig;
 
 namespace BlyatOS.Library.Functions;
 
@@ -40,24 +42,43 @@ internal class UserManagement
         return requiredPermissions.Any(r => r == user.Role);
     }
 
-    public static void CreateUser(UsersConfig conf)
+    public static int[] GetValidRoles(int userId, UsersConfig usersConfig) //Sagt, welche Rollen(int werte) im CreateUsers möglich sind für den jeweiligen Account
+    {
+        List<int> validRoles = new();
+
+        if (CheckPermissions(userId, usersConfig, Permissions.SuperAdmin))
+        {
+            validRoles.Add((int)URoles.User);
+            validRoles.Add((int)URoles.Admin);
+        }
+        else if (CheckPermissions(userId, usersConfig, Permissions.Admin))
+        {
+            validRoles.Add((int)URoles.User);
+        }
+        return validRoles.ToArray();
+    }
+    public static void CreateUser(UsersConfig conf, int currUser) //Kreiert einen Nutzer
     {
         Console.WriteLine("Enter username: ");
         string uName = Console.ReadLine();
+        if(conf.Users.Any(u => u.Username == uName))
+        {
+            Console.WriteLine("Users may not have the same Username!");
+            return;
+        }
         Console.WriteLine("Enter password: ");
-        string password = Console.ReadLine();
-        Console.WriteLine("Enter role (0 - User, 1 - Admin): ");
+        string password = Console.ReadLine(); 
+        Console.WriteLine($"Enter role (0 - User{(CheckPermissions(currUser, conf, Permissions.SuperAdmin) ? ", 1 - Admin" : "")}): ");
         string roleInput = Console.ReadLine();
-
+        int[] validRolesToCreate = GetValidRoles(currUser,conf);
         if (!int.TryParse(roleInput, out int roleInt))
         {
             Console.WriteLine("Invalid input, must be a number");
             return;
         }
 
-        if (roleInt < 0 || roleInt > 1)
+        if (!validRolesToCreate.Contains(roleInt))
         {
-            if (roleInt == 2) Console.WriteLine("SuperAdmin(2) Cannot be created during Runtime!");
             Console.WriteLine("Invalid role");
             return;
         }
@@ -68,6 +89,17 @@ internal class UserManagement
             newId++;
         }
         conf.Users.Add(new UsersConfig.User(uName, newId, password, role));
-        Console.WriteLine($"User {uName} created with ID {newId.ToString()} and role {role.ToString()}"); //role.Tostring geht nicht
+        Console.WriteLine($"User {uName} created with ID {newId} and role {RoleToString(role)}"); //role.Tostring geht nicht
+    }
+
+    static string RoleToString(URoles role)
+    {
+        switch (role)
+        {
+            case URoles.Admin: return "Admin";
+            case URoles.User: return "User";
+            case URoles.SuperAdmin: return "SuperAdmin";
+            default: return "Unknown";
+        }
     }
 }

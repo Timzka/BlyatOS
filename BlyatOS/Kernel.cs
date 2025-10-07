@@ -9,135 +9,138 @@ using BadTetrisCS;
 using BlyatOS.Library.Configs;
 using Microsoft.VisualBasic.FileIO;
 using System.Linq;
+using System.ComponentModel.Design;
 
 namespace BlyatOS;
 
 public class Kernel : Sys.Kernel
 {
     DateTime momentOfStart;
-    string versionString = "Blyat version 0.9";
+    string versionString = "0.9";
     private UsersConfig UsersConf = new UsersConfig();
     private int CurrentUser;
+    bool logged_in = false;
     protected override void BeforeRun()
     {
-        Console.Clear();
-        int c = 0;
-        while (true)
-        {
-            if(c >= 5) Cosmos.System.Power.Shutdown();
-            int uid = UserManagement.Login(UsersConf);
-            if (uid != -1)
-            {
-                CurrentUser = uid;
-                break;
-            }
-            c++;
-        }
         OnStartUp.RunLoadingScreenThing(); //could be removed, but it is cool
-        Console.WriteLine("BlyatOS booted successfully. Type /help for help");
+        Console.WriteLine($"BlyatOS v{versionString} booted successfully. Type help for a list of valid commands");
         momentOfStart = DateTime.Now;
     }
 
     protected override void Run()
     {
-        Console.Write("Input: ");
-        var input = Console.ReadLine();
-
-        string[] args = input.Split(' ');
-
-        switch (args[0])
+        if (logged_in)
         {
-            case "help":
-                {
-                    BasicFunctions.Help();
-                    break;
-                }
-            case "version":
-                {
-                    Console.WriteLine(versionString);
-                    break;
-                }
-            case "echo":
-                {
-                    BasicFunctions.EchoFunction(args);
-                    break;
-                }
-            case "runtime":
-                {
-                    Console.WriteLine(BasicFunctions.RunTime(momentOfStart));
-                    break;
-                }
-            case "reboot":
-                {
-                    Console.WriteLine("rebooting");
-                    Global.PIT.Wait(1000);
-                    Cosmos.System.Power.Reboot();
-                    break;
-                }
-            case "exit":
-                {
-                    Console.WriteLine("exitting");
-                    Global.PIT.Wait(1000);
-                    Cosmos.System.Power.Shutdown();
-                    break;
-                }
-            case "cls":
-                {
-                    Console.Clear();
-                    break;
-                }
-            case "logout":
-            case "lock":
-                {
-                    Console.WriteLine("Logging out...");
-                    Global.PIT.Wait(1000);
-                    int c = 0;
-                    while (true)
+            Console.Write("Input: ");
+            var input = Console.ReadLine();
+
+            string[] args = input.Split(' ');
+
+            switch (args[0])
+            {
+                case "help":
                     {
-                        if (c >= 5) Cosmos.System.Power.Shutdown();
-                        int uid = UserManagement.Login(UsersConf);
-                        if (uid != -1)
+                        BasicFunctions.Help();
+                        break;
+                    }
+                case "version":
+                case "v":
+                    {
+                        Console.WriteLine("Blyat version " + versionString);
+                        break;
+                    }
+                case "echo":
+                    {
+                        BasicFunctions.EchoFunction(args);
+                        break;
+                    }
+                case "runtime":
+                    {
+                        Console.WriteLine(BasicFunctions.RunTime(momentOfStart));
+                        break;
+                    }
+                case "reboot":
+                    {
+                        Console.WriteLine("rebooting");
+                        Global.PIT.Wait(1000);
+                        Cosmos.System.Power.Reboot();
+                        break;
+                    }
+                case "exit":
+                    {
+                        Console.WriteLine("exitting");
+                        Global.PIT.Wait(1000);
+                        Cosmos.System.Power.Shutdown();
+                        break;
+                    }
+                case "cls":
+                case "clear":
+                case "clearScreen":
+                    {
+                        Console.Clear();
+                        break;
+                    }
+                case "logout":
+                case "lock":
+                    {
+                        Console.WriteLine("Logging out...");
+                        Global.PIT.Wait(1000);
+                        logged_in = false;
+                        break;
+                    }
+                case "vodka":
+                    {
+                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
                         {
-                            CurrentUser = uid;
+                            Console.WriteLine("Missing Permissions");
                             break;
                         }
-                        c++;
-                    }
-                    break;
-                }
-            case "vodka":
-                {
-                    if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
-                    {
-                        Console.WriteLine("Missing Permissions");
+                        Console.WriteLine("Nyet, no vodka for you! //not implemented");
                         break;
                     }
-                    Console.WriteLine("Nyet, no vodka for you! //not implemented");
-                    break;
-                }
-            case "createUser":
-                { 
-                    Console.Clear();
-                    if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.SuperAdmin))
+                case "createUser":
                     {
-                        Console.WriteLine("Missing Permissions");
+                        Console.Clear();
+                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                        {
+                            Console.WriteLine("Missing Permissions");
+                            break;
+                        }
+                        UserManagement.CreateUser(UsersConf, CurrentUser);
                         break;
                     }
-                    UserManagement.CreateUser(UsersConf);
-                    break; 
-                }
-            case "tetris":
+                case "tetris":
+                    {
+                        BadTetris game = new BadTetris();
+                        game.Run();
+                        break;
+                    }
+                default:
+                    {
+                        Console.WriteLine("Unknown command! Enter \"help\" for more information!");
+                        break;
+                    }
+            }
+        }
+        else
+        {
+            Console.Clear();
+            int c = 0;
+            while (true)
+            {
+                if (c >= 5) Cosmos.System.Power.Shutdown();
+                else if (c > 0) Console.WriteLine($"You have {5 - c} tries left until shutdown");
+                int uid = UserManagement.Login(UsersConf);
+                if (uid != -1)
                 {
-                    BadTetris game = new BadTetris();
-                    game.Run();
+                    CurrentUser = uid;
                     break;
                 }
-            default:
-                {
-                    Console.WriteLine("Unknown command! Enter \"help\" for more information!");
-                    break;
-                }
-
+                c++;
+                Console.Clear();
+            }
+            logged_in = true;
+            Console.Clear();
         }
     }
 }

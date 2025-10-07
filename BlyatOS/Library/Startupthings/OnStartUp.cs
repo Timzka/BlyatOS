@@ -23,7 +23,7 @@ public class OnStartUp
         "  ~~      ",
         "  ~       "
         };
-
+        Console.CursorVisible = false;
         Console.Clear();
 
         for (int len = maxLength; len >= 0; len--)
@@ -63,7 +63,8 @@ public class OnStartUp
             Global.PIT.Wait(randTime); // Delay
         }
 
-        Console.Clear();
+        Console.Clear(); 
         Console.SetCursorPosition(0, 0);
+        Console.CursorVisible = true;
     }
 }

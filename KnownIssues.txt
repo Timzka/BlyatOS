@@ -1,0 +1,11 @@
+Legende: - = beginn, --> = erklärung/vorschläge, "T" = von Tim ;P, ! = erledigt
+
+-T: Console.CursorVisible = false klappt, aber = true klappt nicht.
+    --> wichtig für den Loading-Screen und Tetris
+    --> laut Chat: "Console.CursorVisible" kann nicht auf true gesetzt werden in Cosmos
+    wenn es einmal aus ist, bleibt es aus.
+    wenn es wichtig wäre, müssten wir einen manuellen strich zeichnen
+
+!-T: Enumwerte können nicht als "string" ausgegeben werden
+    --> Switch-Case funktion die das spezielle Enum zu strings konvertiert
+

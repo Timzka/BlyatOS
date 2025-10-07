@@ -10,15 +10,18 @@ public class BasicFunctions
 {
     public static void Help()
     {
-        int padding = 12;
+        int padding = 20;
 
         Console.WriteLine(
-            " \"version\"".PadRight(padding) + "write version number\n" +
+            " \"version\"| \"v\"".PadRight(padding) + "write version number\n" +
             " \"echo\"".PadRight(padding) + "echo text\n" +
             " \"runtime\"".PadRight(padding) + "show runtime\n" +
             " \"tetris\"".PadRight(padding) + "starts a game of tetris\n" +
             " \"reboot\"".PadRight(padding) + "reboot system\n" +
-            " \"exit\"".PadRight(padding) + "shutdown kernel"
+            " \"exit\"".PadRight(padding) + "shutdown kernel\n" +
+            " \"createUser\"".PadRight(padding) + "create new user\n" +
+            " \"lock\" | \"logout\"".PadRight(padding) + "return to login\n" +
+            " \"clearScreen\" | \"clear\" | \"cls\"".PadRight(padding) + "clear the console\n"
         );
     }
 
@@ -36,7 +39,7 @@ public class BasicFunctions
 
     public static string RunTime(DateTime momentOfStart)
     {
-        TimeSpan span = (DateTime.Now - momentOfStart).Add(TimeSpan.FromHours(25));
+        TimeSpan span = (DateTime.Now - momentOfStart);
         
         string days = span.Days < 10 ? "0" + span.Days.ToString() : span.Days.ToString();
         string hours = span.Hours < 10 ? "0" + span.Hours.ToString() : span.Hours.ToString();
