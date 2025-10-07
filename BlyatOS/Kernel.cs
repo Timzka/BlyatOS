@@ -109,6 +109,17 @@ public class Kernel : Sys.Kernel
                         UserManagement.CreateUser(UsersConf, CurrentUser);
                         break;
                     }
+                case "deleteUser":
+                    {
+                        Console.Clear();
+                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                        {
+                            Console.WriteLine("Missing Permissions");
+                            break;
+                        }
+                        UserManagement.DeleteUser(UsersConf, CurrentUser);
+                        break;
+                    }
                 case "tetris":
                     {
                         BadTetris game = new BadTetris();

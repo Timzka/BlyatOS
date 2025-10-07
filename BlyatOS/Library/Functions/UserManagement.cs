@@ -54,6 +54,48 @@ internal class UserManagement
         }
         return validRoles.ToArray();
     }
+
+    public static void DeleteUser(UsersConfig conf, int currUser)
+    {
+        Console.WriteLine("valid Ids:"); //missing check for Admin to not delete admins
+        var current = conf.Users.FirstOrDefault(u => u.UId == currUser);
+
+        var validIds = current.Role switch
+        {
+            URoles.SuperAdmin => conf.Users.Where(u => u.UId != currUser && u.Role != URoles.SuperAdmin).Select(u => u.UId),
+            URoles.Admin => conf.Users.Where(u => u.Role == URoles.User).Select(u => u.UId),
+            _ => Enumerable.Empty<int>()
+        };
+
+        if(validIds.Count() == 0)
+        {
+            Console.WriteLine("No valid IDs to delete.");
+            return;
+        }
+
+        foreach (var id in validIds)
+        {
+            Console.WriteLine(id);
+        }
+
+        Console.WriteLine("Enter the ID of the user you want to delete: ");
+        string idInput = Console.ReadLine();
+        if (!int.TryParse(idInput, out int idToDelete))
+        {
+            Console.WriteLine("Invalid input");
+            return;
+        }
+        if (!validIds.Contains(idToDelete))
+        {
+            Console.WriteLine("Invalid ID");
+            return;
+        }
+        else
+        {
+            conf.Users.RemoveAll(u => u.UId == idToDelete);
+            Console.WriteLine($"User with ID {idToDelete} deleted.");
+        }
+    }
     public static void CreateUser(UsersConfig conf, int currUser) //Kreiert einen Nutzer
     {
         Console.WriteLine("Enter username: ");
