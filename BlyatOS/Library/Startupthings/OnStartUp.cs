@@ -47,11 +47,11 @@ public class OnStartUp
             Console.ForegroundColor = ConsoleColor.White;
             if (len > 0)
             {
-                for (int i = 0; i < len - 1; i++) Console.Write("#");
+                for (int i = 0; i < len; i++) Console.Write("#");
 
                 // "animation"
-                Console.ForegroundColor = len % 3 == 0 ? ConsoleColor.Red :
-                                          len % 3 == 1 ? ConsoleColor.DarkYellow :
+                Console.ForegroundColor = len % 3 == 0 ? ConsoleColor.DarkYellow :
+                                          len % 3 == 1 ? ConsoleColor.Red :
                                                           ConsoleColor.Yellow;
                 Console.Write("#");
             }
