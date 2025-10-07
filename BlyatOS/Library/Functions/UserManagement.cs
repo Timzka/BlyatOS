@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 using BlyatOS.Library.Configs;
 using Cosmos.HAL;
 using static BlyatOS.Library.Configs.UsersConfig;
@@ -73,7 +70,7 @@ internal class UserManagement
         int[] validRolesToCreate = GetValidRoles(currUser,conf);
         if (!int.TryParse(roleInput, out int roleInt))
         {
-            Console.WriteLine("Invalid input, must be a number");
+            Console.WriteLine("You cannot delete yourself.");
             return;
         }
 
