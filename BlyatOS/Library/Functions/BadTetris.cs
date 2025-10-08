@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using BlyatOS.Library;
 using Cosmos.System;
 using Console = System.Console;
 
@@ -232,12 +233,12 @@ public class BadTetris
 
     private void HideCursor()
     {
-        Console.CursorVisible = false;
+        VGACursorFix.HideCursor();
     }
 
     private void ShowCursor()
     {
-        Console.CursorVisible = true;
+        VGACursorFix.ShowCursor();
     }
 
     private void ClearScreen()

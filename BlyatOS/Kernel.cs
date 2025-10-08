@@ -21,6 +21,7 @@ public class Kernel : Sys.Kernel
     private UsersConfig UsersConf = new UsersConfig();
     private int CurrentUser;
     bool logged_in = false;
+    Random Rand = new Random(DateTime.Now.Millisecond); //universal random so it doesnt need to be set all the time(for functions that need it)
     protected override void BeforeRun()
     {
         OnStartUp.RunLoadingScreenThing(); //could be removed, but it is cool
@@ -59,6 +60,11 @@ public class Kernel : Sys.Kernel
                 case "runtime":
                     {
                         Console.WriteLine(BasicFunctions.RunTime(momentOfStart));
+                        break;
+                    }
+                case "wiseman":
+                    {
+                        Console.WriteLine(BasicFunctions.GenerateWiseManMessage(Rand));
                         break;
                     }
                 case "reboot":

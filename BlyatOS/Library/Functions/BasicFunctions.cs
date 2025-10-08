@@ -10,7 +10,7 @@ public class BasicFunctions
 {
     public static void Help()
     {
-        int padding = 20;
+        int padding = 30;
 
         Console.WriteLine(
             " \"version\"| \"v\"".PadRight(padding) + "write version number\n" +
@@ -40,12 +40,27 @@ public class BasicFunctions
     public static string RunTime(DateTime momentOfStart)
     {
         TimeSpan span = (DateTime.Now - momentOfStart);
-        
+
         string days = span.Days < 10 ? "0" + span.Days.ToString() : span.Days.ToString();
         string hours = span.Hours < 10 ? "0" + span.Hours.ToString() : span.Hours.ToString();
         string minutes = span.Minutes < 10 ? "0" + span.Minutes.ToString() : span.Minutes.ToString();
         string seconds = span.Seconds < 10 ? "0" + span.Seconds.ToString() : span.Seconds.ToString();
-        
+
         return days + ":" + hours + ":" + minutes + ":" + seconds;
+    }
+
+    private static string[] WiseManMessages = new string[]
+    {
+        "Sometimes you have to let your goofy shine side through.",
+        "The best way to get something done is to begin, do it for 5 minutes and quit without saving",
+        "If you think your are too small to make a difference, go gambling at SlotsOS",
+        "It is better to just use BlyatOS forever instead of returning to Windows",
+        //"Lieber arm dran als Arm ab!" //german thing
+        //add more whatever you want ;)))
+    };
+    public static string GenerateWiseManMessage(Random rand)
+    {
+        int index = rand.Next(0, WiseManMessages.Length); //however much messages there are it will work!
+        return WiseManMessages[index];
     }
 }
