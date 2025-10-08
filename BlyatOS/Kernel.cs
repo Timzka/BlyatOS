@@ -10,6 +10,7 @@ using BlyatOS.Library.Configs;
 using Microsoft.VisualBasic.FileIO;
 using System.Linq;
 using System.ComponentModel.Design;
+using BlyatOS.Library;
 
 namespace BlyatOS;
 
@@ -25,6 +26,7 @@ public class Kernel : Sys.Kernel
         OnStartUp.RunLoadingScreenThing(); //could be removed, but it is cool
         Console.WriteLine($"BlyatOS v{versionString} booted successfully. Type help for a list of valid commands");
         momentOfStart = DateTime.Now;
+        VGACursorFix.EnableDebug();
     }
 
     protected override void Run()
