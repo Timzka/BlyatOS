@@ -25,9 +25,10 @@ public class Kernel : Sys.Kernel
     protected override void BeforeRun()
     {
         OnStartUp.RunLoadingScreenThing(); //could be removed, but it is cool
+        //VGACursorFix.EnableDebug();
         Console.WriteLine($"BlyatOS v{versionString} booted successfully. Type help for a list of valid commands");
         momentOfStart = DateTime.Now;
-        VGACursorFix.EnableDebug();
+        Global.PIT.Wait(1000);
     }
 
     protected override void Run()

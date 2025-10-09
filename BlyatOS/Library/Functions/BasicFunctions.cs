@@ -10,19 +10,29 @@ public class BasicFunctions
 {
     public static void Help()
     {
-        int padding = 30;
+        int padding = 30; //make page system for Help, so that like.. 6 commands are shown at a time or so
 
-        Console.WriteLine(
-            " \"version\"| \"v\"".PadRight(padding) + "write version number\n" +
-            " \"echo\"".PadRight(padding) + "echo text\n" +
-            " \"runtime\"".PadRight(padding) + "show runtime\n" +
-            " \"tetris\"".PadRight(padding) + "starts a game of tetris\n" +
-            " \"reboot\"".PadRight(padding) + "reboot system\n" +
-            " \"exit\"".PadRight(padding) + "shutdown kernel\n" +
-            " \"createUser\"".PadRight(padding) + "create new user\n" +
-            " \"lock\" | \"logout\"".PadRight(padding) + "return to login\n" +
-            " \"clearScreen\" | \"clear\" | \"cls\"".PadRight(padding) + "clear the console\n"
-        );
+        var commands = new Dictionary<string, string> //command, description
+        {
+            { "version | v", "write version number" },
+            { "echo", "echo text" },
+            { "runtime", "show runtime" },
+            { "tetris", "starts a game of tetris" },
+            { "reboot", "reboot system" },
+            { "exit", "shutdown kernel" },
+            { "createUser", "create new user" },
+            { "lock | logout", "return to login" },
+            { "deleteUser", "delete a user" },
+            { "wiseman", "get a motivational message" },
+            { "clearScreen | clear", "clear the console" },
+            { "cls", "" },
+            { "help", "show this help" }
+        };
+
+        foreach (var command in commands)
+        {
+            Console.WriteLine(command.Key.PadRight(padding) + command.Value);
+        }
     }
 
     public static void EchoFunction(string[] payload)
