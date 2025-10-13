@@ -1,6 +1,6 @@
 Legende: - = beginn, --> = erklärung/vorschläge, "T" = von Tim ;P, ! = erledigt
 
--T: Console.CursorVisible = false klappt, aber = true klappt nicht.
+!-T: Console.CursorVisible = false klappt, aber = true klappt nicht.
     --> wichtig für den Loading-Screen und Tetris
     --> laut Chat: "Console.CursorVisible" kann nicht auf true gesetzt werden in Cosmos
     wenn es einmal aus ist, bleibt es aus.
