@@ -8,31 +8,43 @@ namespace BlyatOS.Library.Functions;
 
 public class BasicFunctions
 {
-    public static void Help()
+    public static void Help(int? page)
     {
-        int padding = 30; //make page system for Help, so that like.. 6 commands are shown at a time or so
+        int commandsPerPage = 6;
 
-        var commands = new Dictionary<string, string> //command, description
+        var commands = new List<Commands>//command, description
         {
-            { "version | v", "write version number" },
-            { "echo", "echo text" },
-            { "runtime", "show runtime" },
-            { "tetris", "starts a game of tetris" },
-            { "reboot", "reboot system" },
-            { "exit", "shutdown kernel" },
-            { "createUser", "create new user" },
-            { "lock | logout", "return to login" },
-            { "deleteUser", "delete a user" },
-            { "wiseman", "get a motivational message" },
-            { "clearScreen | clear", "clear the console" },
-            { "cls", "" },
-            { "help", "show this help" }
+            new Commands("help [page]", "show help pages (optional page number)"),
+            new Commands("version | v", "write version number"),
+            new Commands("echo", "echo text"),
+            new Commands("runtime", "show runtime"),
+            new Commands("tetris", "starts a game of tetris"),
+            new Commands("reboot", "reboot system") ,
+            new Commands("exit", "shutdown kernel"),
+            new Commands("createUser", "create new user"),
+            new Commands("lock | logout", "return to login"),
+            new Commands("deleteUser", "delete a user") ,
+            new Commands("wiseman", "get a motivational message"),
+            new Commands("clearScreen | clear | cls", "clear the console"),
         };
 
-        foreach (var command in commands)
+        int totalCommands = commands.Count;
+        int totalPages = (int)Math.Ceiling((double)totalCommands / commandsPerPage);
+
+        int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
+
+        Console.WriteLine($"--- Help Page {currentPage}/{totalPages} ---");
+
+        var wantedCommandsPage = commands.Skip((currentPage - 1) * commandsPerPage).Take(commandsPerPage);
+
+        foreach (var command in wantedCommandsPage)
         {
-            Console.WriteLine(command.Key.PadRight(padding) + command.Value);
+            Console.WriteLine("---");
+            Console.WriteLine("command: " + command.Command);
+            Console.WriteLine("description: " + command.Description);
         }
+
+        Console.WriteLine();
     }
 
     public static void EchoFunction(string[] payload)
@@ -72,5 +84,17 @@ public class BasicFunctions
     {
         int index = rand.Next(0, WiseManMessages.Length); //however much messages there are it will work!
         return WiseManMessages[index];
+    }
+}
+
+public class Commands
+{
+    public string Command { get; set; }
+    public string Description { get; set; }
+
+    public Commands(string command, string description)
+    {
+        Command = command;
+        Description = description;
     }
 }

@@ -44,7 +44,13 @@ public class Kernel : Sys.Kernel
             {
                 case "help":
                     {
-                        BasicFunctions.Help();
+                        int? page = null;
+                        if (args.Length > 1)
+                        {
+                            if (int.TryParse(args[1], out int p)) page = p;
+                        }
+                        Console.Clear();
+                        BasicFunctions.Help(page);
                         break;
                     }
                 case "version":
