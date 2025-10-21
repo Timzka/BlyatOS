@@ -3,14 +3,9 @@ using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Startupthings;
 using Cosmos.HAL;
-using Cosmos.HAL.BlockDevice;
 using System;
-using System.IO;
-using System.Security.Principal;
 using Cosmos.System.ScanMaps;
 using Sys = Cosmos.System;
-using SysFS = Cosmos.System.FileSystem;
-using SysVFS = Cosmos.System.FileSystem.VFS;
 using BlyatOS.Library.BlyatFileSystem;
 
 namespace BlyatOS;
@@ -44,6 +39,7 @@ public class Kernel : Sys.Kernel
     {
         try
         {
+            string[] dirs = fsh.GetDirectories(current_directory);
             if (logged_in)
             {
                 Console.Write("Input: ");
@@ -165,6 +161,55 @@ public class Kernel : Sys.Kernel
                             game.Run();
                             break;
                         }
+                    case "fsinfo":
+                    {
+                        var disks = fs.Disks;
+                        foreach (var disk in disks)
+                        {
+                            if (disk?.Host == null)
+                            {
+                                Console.WriteLine("Disk host unavailable");
+                                continue;
+                            }
+
+                            Console.WriteLine(fsh.BlockDeviceTypeToString(disk.Host.Type));
+
+                            foreach (var partition in disk.Partitions)
+                            {
+                                Console.WriteLine(partition.Host);
+                                Console.WriteLine(partition.RootPath);
+                                Console.WriteLine(partition.MountedFS.Size);
+                            }
+                        }
+                        break;
+                    }
+                    case "dir":
+                    {
+                        foreach (var item in dirs)
+                        {
+                            Console.WriteLine(item);
+                        }
+
+                        break;
+                    }
+                    case "mkdir":
+                    {
+                        string? name = null;
+                        if (args.Length > 1) name = args[1];
+                        var path = current_directory + name;
+                        fs.CreateDirectory(path);
+                        Console.WriteLine($"Directory '{name}' created at '{path}'");
+                        break;
+                    }
+                    case "touch":
+                    {
+                        string? name = null;
+                        if (args.Length > 1) name = args[1];
+                        var path = current_directory + name;
+                        fs.CreateFile(path);
+                        Console.WriteLine($"File '{name}' created at '{path}'");
+                        break;
+                    }
                     default:
                         {
                             Console.WriteLine("Unknown command! Enter \"help\" for more information!");
