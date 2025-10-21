@@ -26,6 +26,8 @@ public class BasicFunctions
             new Commands("deleteUser", "delete a user") ,
             new Commands("wiseman", "get a motivational message"),
             new Commands("clearScreen | clear | cls", "clear the console"),
+            new Commands("changePassword", "change your password and re-log"),
+            new Commands("changePolicy", "change the Policy")
         };
 
         int totalCommands = commands.Count;
