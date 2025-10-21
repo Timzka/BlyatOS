@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Cosmos.HAL;
-using Sys = Cosmos.System;
-using BlyatOS.Library.Startupthings;
-using BlyatOS.Library.Functions;
-using BadTetrisCS;
+﻿using BadTetrisCS;
 using BlyatOS.Library.Configs;
-using Microsoft.VisualBasic.FileIO;
-using System.Linq;
-using System.ComponentModel.Design;
-using BlyatOS.Library;
-using System.ComponentModel.DataAnnotations;
+using BlyatOS.Library.Functions;
+using BlyatOS.Library.Startupthings;
+using Cosmos.HAL;
+using System;
+using System.IO;
+using Cosmos.System.ScanMaps;
+using Sys = Cosmos.System;
+using BlyatOS.Library.BlyatFileSystem;
 
 namespace BlyatOS;
 
@@ -22,11 +18,20 @@ public class Kernel : Sys.Kernel
     private UsersConfig UsersConf = new UsersConfig();
     private int CurrentUser;
     bool logged_in = false;
-    Random Rand = new Random(DateTime.Now.Millisecond); //universal random so it doesnt need to be set all the time(for functions that need it)
+    Random Rand = new Random(DateTime.Now.Millisecond);
+
+    Sys.FileSystem.CosmosVFS fs;
+    FileSystemHelpers fsh = new FileSystemHelpers();
+
+    private const string RootPath = @"0:\";
+    private string current_directory = RootPath; // immer mit abschlie�endem Backslash
+
     protected override void BeforeRun()
     {
-        OnStartUp.RunLoadingScreenThing(); //could be removed, but it is cool
-        //VGACursorFix.EnableDebug();
+        fs = new Sys.FileSystem.CosmosVFS();
+        Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
+
+        Sys.KeyboardManager.SetKeyLayout(new DE_Standard());
         Console.WriteLine($"BlyatOS v{versionString} booted successfully. Type help for a list of valid commands");
         momentOfStart = DateTime.Now;
         Global.PIT.Wait(1000);
@@ -36,22 +41,24 @@ public class Kernel : Sys.Kernel
     {
         try
         {
+            // Verzeichnislisten immer aktuell holen
+            string[] dirs = fsh.GetDirectories(current_directory);
+            string[] files = fsh.GetFiles(current_directory);
+
             if (logged_in)
             {
                 Console.Write("Input: ");
                 var input = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input))
+                    return;
 
-                string[] args = input.Split(' ');
-
+                string[] args = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 switch (args[0])
                 {
                     case "help":
                         {
                             int? page = null;
-                            if (args.Length > 1)
-                            {
-                                if (int.TryParse(args[1], out int p)) page = p;
-                            }
+                            if (args.Length > 1 && int.TryParse(args[1], out int p)) page = p;
                             Console.Clear();
                             BasicFunctions.Help(page);
                             break;
@@ -204,11 +211,14 @@ public class Kernel : Sys.Kernel
                             game.Run();
                             break;
                         }
+
+                    case "pwd":
+                        Console.WriteLine(current_directory);
+                        break;
+
                     default:
-                        {
-                            Console.WriteLine("Unknown command! Enter \"help\" for more information!");
-                            break;
-                        }
+                        Console.WriteLine("Unknown command! Enter \"help\" for more information!");
+                        break;
                 }
             }
             else
@@ -242,5 +252,48 @@ public class Kernel : Sys.Kernel
         {
             Console.WriteLine("An error occured: " + ex.Message);
         }
+    }
+
+    // Helpers
+
+    private static string TrimPath(string full)
+    {
+        if (string.IsNullOrEmpty(full)) return full;
+        var sep = full.TrimEnd('\\').LastIndexOf('\\');
+        if (sep >= 0 && sep < full.Length - 1)
+            return full.TrimEnd('\\').Substring(sep + 1);
+        return full.TrimEnd('\\');
+    }
+
+    private static bool IsAbsolute(string path) => path.Contains(":\\");
+    private static bool IsRoot(string path) => string.Equals(path, RootPath, StringComparison.Ordinal);
+
+    private static string EnsureTrailingSlash(string path)
+    {
+        if (!path.EndsWith("\\"))
+            return path + "\\";
+        return path;
+    }
+
+    private static string PathCombine(string baseDir, string child)
+    {
+        // Basis immer mit Backslash
+        baseDir = EnsureTrailingSlash(baseDir);
+        // Path.Combine entfernt doppelte Backslashes korrekt
+        var combined = Path.Combine(baseDir, child);
+        return EnsureTrailingSlash(combined);
+    }
+
+    private static string GetParent(string path)
+    {
+        path = EnsureTrailingSlash(path);
+        if (IsRoot(path)) return path;
+        // entfernt letzten Segment-Backslash
+        var trimmed = path.TrimEnd('\\');
+        var idx = trimmed.LastIndexOf('\\');
+        if (idx <= 2) // z.B. "0:\" -> Index 2
+            return RootPath;
+        var parent = trimmed.Substring(0, idx + 1);
+        return EnsureTrailingSlash(parent);
     }
 }

@@ -20,6 +20,7 @@ public class BasicFunctions
             new Commands("version | v", "write version number"),
             new Commands("echo", "echo text"),
             new Commands("runtime", "show runtime"),
+            new Commands("dir | ls", "list directories (dir) or dirs+files (ls)"),
             new Commands("tetris", "starts a game of tetris"),
             new Commands("reboot", "reboot system") ,
             new Commands("exit", "shutdown kernel"),
@@ -28,6 +29,9 @@ public class BasicFunctions
             new Commands("deleteUser", "delete a user") ,
             new Commands("wiseman", "get a motivational message"),
             new Commands("clearScreen | clear | cls", "clear the console"),
+            new Commands("cat <file>", "print file contents"),
+            new Commands("mkdir <name>", "create directory"),
+            new Commands("touch <name>", "create empty file"),
         };
 
         int totalCommands = commands.Count;
@@ -79,12 +83,10 @@ public class BasicFunctions
         "The best way to get something done is to begin, do it for 5 minutes and quit without saving",
         "If you think your are too small to make a difference, go gambling at SlotsOS",
         "It is better to just use BlyatOS forever instead of returning to Windows",
-        //"Lieber arm dran als Arm ab!" //german thing
-        //add more whatever you want ;)))
     };
     public static string GenerateWiseManMessage(Random rand)
     {
-        int index = rand.Next(0, WiseManMessages.Length); //however much messages there are it will work!
+        int index = rand.Next(0, WiseManMessages.Length);
         return WiseManMessages[index];
     }
 }
