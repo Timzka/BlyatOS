@@ -11,6 +11,7 @@ using Microsoft.VisualBasic.FileIO;
 using System.Linq;
 using System.ComponentModel.Design;
 using BlyatOS.Library;
+using System.ComponentModel.DataAnnotations;
 
 namespace BlyatOS;
 
@@ -33,18 +34,14 @@ public class Kernel : Sys.Kernel
 
     protected override void Run()
     {
-        if (logged_in)
+        try
         {
-            //Console.WriteLine("Enter 'help', if you need help");
-            //Console.WriteLine("Enter 'basic' to use basic functions");
-            //Console.WriteLine("Enter 'userManagment' to get access to user managment");
-            //Console.WriteLine("Enter 'tetris' to play a game");
-            //Console.WriteLine("Enter 'exit' to exit the OS");
-            Console.WriteLine("Input: ");
+            if (logged_in)
+            {
+                Console.Write("Input: ");
+                var input = Console.ReadLine();
 
-            var input = Console.ReadLine();
-
-            string[] args = input.Split(' ');
+                string[] args = input.Split(' ');
 
             switch (args[0])
             {
@@ -53,7 +50,14 @@ public class Kernel : Sys.Kernel
                         int? page = null;
                         if (args.Length > 1)
                         {
-                            if (int.TryParse(args[1], out int p)) page = p;
+                            int? page = null;
+                            if (args.Length > 1)
+                            {
+                                if (int.TryParse(args[1], out int p)) page = p;
+                            }
+                            Console.Clear();
+                            BasicFunctions.Help(page);
+                            break;
                         }
                         Console.Clear();
                         BasicFunctions.Help(page);
@@ -213,26 +217,36 @@ public class Kernel : Sys.Kernel
                         break;
                     }
             }
-        }
-        else
-        {
-            Console.Clear();
-            int c = 0;
-            while (true)
+            else
             {
-                if (c >= 5) Cosmos.System.Power.Shutdown();
-                else if (c > 0) Console.WriteLine($"You have {5 - c} tries left until shutdown");
-                int uid = UserManagement.Login(UsersConf);
-                if (uid != -1)
+                Console.Clear();
+                int c = 0;
+                while (true)
                 {
-                    CurrentUser = uid;
-                    break;
+                    if (c >= 5) Cosmos.System.Power.Shutdown();
+                    else if (c > 0) Console.WriteLine($"You have {5 - c} tries left until shutdown");
+                    int uid = UserManagement.Login(UsersConf);
+                    if (uid != -1)
+                    {
+                        CurrentUser = uid;
+                        break;
+                    }
+                    c++;
+                    Console.Clear();
                 }
-                c++;
+                logged_in = true;
                 Console.Clear();
             }
-            logged_in = true;
-            Console.Clear();
+        }
+        catch (GenericException ex)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"Message: {ex.EMessage}" + (ex.Label != "" ? $",\nLabel: {ex.Label}" : "") + (ex.ComesFrom != "" ? $",\nSource: {ex.ComesFrom}" : ""));
+            Console.WriteLine();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occured: " + ex.Message);
         }
     }
 }
