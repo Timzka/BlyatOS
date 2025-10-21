@@ -19,7 +19,8 @@ public class Kernel : Sys.Kernel
 {
     DateTime momentOfStart;
     string versionString = "0.9";
-    private UsersConfig UsersConf = new UsersConfig();
+    private UsersConfig UsersConf = new();
+    private PasswordPolicy Policy = new();
     private int CurrentUser;
     bool logged_in = false;
     Random Rand = new Random(DateTime.Now.Millisecond); //universal random so it doesnt need to be set all the time(for functions that need it)
@@ -55,19 +56,6 @@ public class Kernel : Sys.Kernel
                             Console.Clear();
                             BasicFunctions.Help(page);
                             break;
-                        }
-                    case "throwTestException1":
-                        {
-                            throw new GenericException("This is a 1st test exception");
-
-                        }
-                    case "throwTestException2":
-                        {
-                            throw new GenericException("This is a 2nd test exception", "TEST_EXCEPTION 2");
-                        }
-                    case "throwTestException3":
-                        {
-                            throw new GenericException("This is a 3rd test exception", "TEST_EXCEPTION 3", "from this command wuwuwu");
                         }
                     case "version":
                     case "v":
@@ -111,6 +99,22 @@ public class Kernel : Sys.Kernel
                             Console.Clear();
                             break;
                         }
+                    case "changePassword":
+                        {
+                            UserManagement.ChangePassword(CurrentUser, UsersConf, Policy);
+                            logged_in = false; //force User to immediately re-log
+                            break;
+                        }
+                    case "changePolicy":
+                        {
+                            if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                            {
+                                Console.WriteLine("Missing Permissions");
+                                break;
+                            }
+                            Policy.SetPolicy();
+                            break;
+                        }
                     case "logout":
                     case "lock":
                         {
@@ -126,8 +130,7 @@ public class Kernel : Sys.Kernel
                                 Console.WriteLine("Missing Permissions");
                                 break;
                             }
-                            Console.WriteLine("Nyet, no vodka for you! //not implemented");
-                            break;
+                            throw new GenericException("Nyet, no vodka for you! //not implemented");
                         }
                     case "createUser":
                         {
@@ -137,7 +140,7 @@ public class Kernel : Sys.Kernel
                                 Console.WriteLine("Missing Permissions");
                                 break;
                             }
-                            UserManagement.CreateUser(UsersConf, CurrentUser);
+                            UserManagement.CreateUser(UsersConf, CurrentUser, Policy);
                             break;
                         }
                     case "deleteUser":

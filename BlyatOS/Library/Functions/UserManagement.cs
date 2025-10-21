@@ -96,7 +96,7 @@ internal class UserManagement
             Console.WriteLine($"User with ID {idToDelete} deleted.");
         }
     }
-    public static void CreateUser(UsersConfig conf, int currUser) //Kreiert einen Nutzer
+    public static void CreateUser(UsersConfig conf, int currUser, PasswordPolicy policy) //Kreiert einen Nutzer
     {
         Console.WriteLine("Enter username: ");
         string uName = Console.ReadLine();
@@ -105,8 +105,15 @@ internal class UserManagement
             Console.WriteLine("Users may not have the same Username!");
             return;
         }
+
+        policy.WritePolicy();
         Console.WriteLine("Enter password: ");
         string password = Console.ReadLine(); 
+        if (!policy.CheckPassword(password))
+        {
+            Console.WriteLine("Password does not meet policy requirements.");
+            return;
+        }
         Console.WriteLine($"Enter role (0 - User{(CheckPermissions(currUser, conf, Permissions.SuperAdmin) ? ", 1 - Admin" : "")}): ");
         string roleInput = Console.ReadLine();
         int[] validRolesToCreate = GetValidRoles(currUser,conf);
@@ -140,5 +147,28 @@ internal class UserManagement
             case URoles.SuperAdmin: return "SuperAdmin";
             default: return "Unknown";
         }
+    }
+
+    public static bool ChangePassword(int currUser, UsersConfig conf, PasswordPolicy policy)
+    {
+        policy.WritePolicy();
+        var current = conf.Users.FirstOrDefault(u => u.UId == currUser);
+        Console.WriteLine("Enter current password: ");
+        string currPassword = Console.ReadLine();
+        if (current.Password != currPassword)
+        {
+            Console.WriteLine("Incorrect password.");
+            return false;
+        }
+        Console.WriteLine("Enter new password: ");
+        string newPassword = Console.ReadLine();
+        if (!policy.CheckPassword(newPassword))
+        {
+            Console.WriteLine("Password does not meet policy requirements.");
+            return false;
+        }
+        conf.Users.RemoveAll(u => u.UId == currUser);
+        conf.Users.Add(new User(current.Username, current.UId, newPassword, current.Role));
+        return true;
     }
 }
