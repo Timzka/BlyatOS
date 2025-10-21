@@ -63,7 +63,7 @@ internal class UserManagement
         var validIds = current.Role switch
         {
             URoles.SuperAdmin => conf.Users.Where(u => u.UId != currUser && u.Role != URoles.SuperAdmin).Select(u => u.UId),
-            URoles.Admin => conf.Users.Where(u => u.Role == URoles.User).Select(u => u.UId),
+            URoles.Admin => conf.Users.Where(u => u.Role == URoles.User).Select(u => u.UId), //order user ids
             _ => Enumerable.Empty<int>()
         };
 
