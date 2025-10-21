@@ -15,6 +15,8 @@ public class BasicFunctions
         var commands = new List<Commands>//command, description
         {
             new Commands("help [page]", "show help pages (optional page number)"),
+            new Commands("basic", "get access to basic functions"),
+            new Commands("userManagment", "get access to user managment"),
             new Commands("version | v", "write version number"),
             new Commands("echo", "echo text"),
             new Commands("runtime", "show runtime"),
