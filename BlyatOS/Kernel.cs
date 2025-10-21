@@ -24,7 +24,7 @@ public class Kernel : Sys.Kernel
     FileSystemHelpers fsh = new FileSystemHelpers();
 
     private const string RootPath = @"0:\";
-    private string current_directory = RootPath; // immer mit abschließendem Backslash
+    private string current_directory = RootPath; // immer mit abschlie�endem Backslash
 
     protected override void BeforeRun()
     {
@@ -63,205 +63,152 @@ public class Kernel : Sys.Kernel
                             BasicFunctions.Help(page);
                             break;
                         }
-                    case "version":
-                    case "v":
-                        Console.WriteLine("Blyat version " + versionString);
-                        break;
+                    case "basic":
+                        {
 
-                    case "echo":
-                        BasicFunctions.EchoFunction(args);
-                        break;
+                            bool exitProgram = false;
+                            Console.Clear();
+                            //Console.WriteLine("Enter 'mainMenu'");
+                            do
+                            {
+                                Console.WriteLine("Basic");
+                                Console.WriteLine("Input: ");
 
-                    case "runtime":
-                        Console.WriteLine(BasicFunctions.RunTime(momentOfStart));
-                        break;
+                                var userInput = Console.ReadLine();
 
-                    case "wiseman":
-                        Console.WriteLine(BasicFunctions.GenerateWiseManMessage(Rand));
-                        break;
+                                string[] arr = userInput.Split(' ');
 
-                    case "reboot":
-                        Console.WriteLine("rebooting");
-                        Global.PIT.Wait(1000);
-                        Cosmos.System.Power.Reboot();
-                        break;
+                                switch (arr[0])
+                                {
+                                    case "version":
+                                        {
+                                            Console.WriteLine("Blyat version " + versionString);
+                                            break;
+                                        }
+                                    case "echo":
+                                        {
+                                            BasicFunctions.EchoFunction(args);
+                                            break;
+                                        }
+                                    case "runtime":
+                                        {
+                                            Console.WriteLine(BasicFunctions.RunTime(momentOfStart));
+                                            break;
+                                        }
+                                    case "wiseman":
+                                        {
+                                            Console.WriteLine(BasicFunctions.GenerateWiseManMessage(Rand));
+                                            break;
+                                        }
+                                    case "reboot":
+                                        {
+                                            Console.WriteLine("rebooting");
+                                            Global.PIT.Wait(1000);
+                                            Cosmos.System.Power.Reboot();
+                                            break;
+                                        }
+                                    case "clearScreen":
+                                        {
+                                            Console.Clear();
+                                            break;
+                                        }
+                                    case "mainMenu":
+                                        {
+                                            exitProgram = true;
+                                            break;
+                                        }
+                                    default:
+                                        {
+                                            Console.WriteLine("Unknown command!  Enter \"help\" for more information!");
+                                            break;
+                                        }
+                                }
+                            } while (!exitProgram);
+                            break;
+
+                        }
+                    case "userManagment":
+                        {
+                            bool exitProgram = false;
+                            Console.Clear();
+                            do
+                            {
+
+                                Console.WriteLine("User Managment");
+                                Console.WriteLine("Input: ");
+
+                                var userInput = Console.ReadLine();
+
+                                string[] arr = userInput.Split(' ');
+
+                                switch (arr[0])
+                                {
+                                    case "lock":
+                                        {
+                                            Console.WriteLine("Logging out...");
+                                            Global.PIT.Wait(1000);
+                                            logged_in = false;
+                                            break;
+                                        }
+                                    case "vodka":
+                                        {
+                                            if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                                            {
+                                                Console.WriteLine("Missing Permissions");
+                                                break;
+                                            }
+                                            Console.WriteLine("Nyet, no vodka for you! //not implemented");
+                                            break;
+                                        }
+                                    case "createUser":
+                                        {
+                                            Console.Clear();
+                                            if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                                            {
+                                                Console.WriteLine("Missing Permissions");
+                                                break;
+                                            }
+                                            UserManagement.CreateUser(UsersConf, CurrentUser);
+                                            break;
+                                        }
+                                    case "deleteUser":
+                                        {
+                                            Console.Clear();
+                                            if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                                            {
+                                                Console.WriteLine("Missing Permissions");
+                                                break;
+                                            }
+                                            UserManagement.DeleteUser(UsersConf, CurrentUser);
+                                            break;
+                                        }
+                                    case "mainMenu":
+                                        {
+                                            exitProgram = true;
+                                            break;
+                                        }
+                                    default:
+                                        {
+                                            Console.WriteLine("Unknown command!  Enter \"help\" for more information!");
+                                            break;
+                                        }
+                                }
+                            } while (!exitProgram && logged_in);
+                            break;
+                        }
 
                     case "exit":
-                        Console.WriteLine("exitting");
-                        Global.PIT.Wait(1000);
-                        Cosmos.System.Power.Shutdown();
-                        break;
-
-                    case "cls":
-                    case "clear":
-                    case "clearScreen":
-                        Console.Clear();
-                        break;
-
-                    case "logout":
-                    case "lock":
-                        Console.WriteLine("Logging out...");
-                        Global.PIT.Wait(1000);
-                        logged_in = false;
-                        break;
-
-                    case "createUser":
-                        Console.Clear();
-                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
                         {
-                            Console.WriteLine("Missing Permissions");
+                            Console.WriteLine("exitting");
+                            Global.PIT.Wait(1000);
+                            Cosmos.System.Power.Shutdown();
                             break;
                         }
-                        UserManagement.CreateUser(UsersConf, CurrentUser);
-                        break;
-
-                    case "deleteUser":
-                        Console.Clear();
-                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
-                        {
-                            Console.WriteLine("Missing Permissions");
-                            break;
-                        }
-                        UserManagement.DeleteUser(UsersConf, CurrentUser);
-                        break;
 
                     case "tetris":
-                        new BadTetris().Run();
-                        break;
-
-                    case "fsinfo":
                         {
-                            var disks = fs.Disks;
-                            foreach (var disk in disks)
-                            {
-                                if (disk?.Host == null)
-                                {
-                                    Console.WriteLine("Disk host unavailable");
-                                    continue;
-                                }
-
-                                Console.WriteLine(fsh.BlockDeviceTypeToString(disk.Host.Type));
-
-                                foreach (var partition in disk.Partitions)
-                                {
-                                    Console.WriteLine(partition.Host);
-                                    Console.WriteLine(partition.RootPath);
-                                    Console.WriteLine(partition.MountedFS.Size);
-                                }
-                            }
-                            break;
-                        }
-
-                    case "dir":
-                        {
-                            foreach (var d in dirs)
-                            {
-                                Console.WriteLine(TrimPath(d) + "/");
-                            }
-                            break;
-                        }
-
-                    case "ls":
-                        {
-                            const string dirMarker = "[D]";
-                            const string fileMarker = "[F]";
-                            foreach (var d in dirs)
-                            {
-                                Console.ForegroundColor = ConsoleColor.Cyan;
-                                Console.WriteLine($"{dirMarker} {TrimPath(d)}/");
-                            }
-                            foreach (var f in files)
-                            {
-                                Console.ForegroundColor = ConsoleColor.Gray;
-                                Console.WriteLine($"{fileMarker} {TrimPath(f)}");
-                            }
-                            Console.ResetColor();
-                            break;
-                        }
-
-                    case "mkdir":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: mkdir <name>");
-                                break;
-                            }
-                            var name = args[1];
-                            var path = PathCombine(current_directory, name);
-                            fs.CreateDirectory(path);
-                            Console.WriteLine($"Directory '{name}' created at '{path}'");
-                            break;
-                        }
-
-                    case "touch":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: touch <name>");
-                                break;
-                            }
-                            var name = args[1];
-                            var path = PathCombine(current_directory, name);
-                            fs.CreateFile(path);
-                            Console.WriteLine($"File '{name}' created at '{path}'");
-                            break;
-                        }
-
-                    case "cat":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: cat <filename>");
-                                break;
-                            }
-                            var fileArg = args[1];
-                            string path = IsAbsolute(fileArg) ? fileArg : PathCombine(current_directory, fileArg).TrimEnd('\\');
-
-                            if (!fsh.FileExists(path))
-                            {
-                                Console.WriteLine($"File not found: {path}");
-                                break;
-                            }
-
-                            try
-                            {
-                                Console.WriteLine(fsh.ReadAllText(path));
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Error reading file: " + ex.Message);
-                            }
-                            break;
-                        }
-
-                    case "cd":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: cd <directory>|..");
-                                break;
-                            }
-                            var target = args[1];
-                            if (target == "..")
-                            {
-                                if (IsRoot(current_directory))
-                                {
-                                    Console.WriteLine("Already at root");
-                                    break;
-                                }
-                                current_directory = GetParent(current_directory);
-                                Console.WriteLine($"Changed directory to '{current_directory}'");
-                                break;
-                            }
-
-                            string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(current_directory, target);
-                            if (!fsh.DirectoryExists(newPath))
-                            {
-                                Console.WriteLine($"Directory not found: {newPath}");
-                                break;
-                            }
-                            current_directory = EnsureTrailingSlash(newPath);
-                            Console.WriteLine($"Changed directory to '{current_directory}'");
+                            BadTetris game = new BadTetris();
+                            game.Run();
                             break;
                         }
 
@@ -294,7 +241,7 @@ public class Kernel : Sys.Kernel
                 logged_in = true;
                 Console.Clear();
             }
-        }
+            }
         catch (GenericException ex)
         {
             Console.WriteLine();
