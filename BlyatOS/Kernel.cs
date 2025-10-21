@@ -35,14 +35,20 @@ public class Kernel : Sys.Kernel
     {
         if (logged_in)
         {
-            Console.Write("Input: ");
+            //Console.WriteLine("Enter 'help', if you need help");
+            //Console.WriteLine("Enter 'basic' to use basic functions");
+            //Console.WriteLine("Enter 'userManagment' to get access to user managment");
+            //Console.WriteLine("Enter 'tetris' to play a game");
+            //Console.WriteLine("Enter 'exit' to exit the OS");
+            Console.WriteLine("Input: ");
+
             var input = Console.ReadLine();
 
             string[] args = input.Split(' ');
 
             switch (args[0])
             {
-                case "help":
+                case "help": 
                     {
                         int? page = null;
                         if (args.Length > 1)
@@ -53,34 +59,140 @@ public class Kernel : Sys.Kernel
                         BasicFunctions.Help(page);
                         break;
                     }
-                case "version":
-                case "v":
+                case "basic":
                     {
-                        Console.WriteLine("Blyat version " + versionString);
+                        
+                        bool exitProgram = false;
+                        Console.Clear();
+                        //Console.WriteLine("Enter 'mainMenu'");
+                        do
+                        {
+                            Console.WriteLine("Basic");
+                            Console.WriteLine("Input: ");
+
+                            var userInput = Console.ReadLine();
+
+                            string[] arr = userInput.Split(' ');
+
+                            switch (arr[0])
+                            {
+                                case "version":
+                                    {
+                                        Console.WriteLine("Blyat version " + versionString);
+                                        break;
+                                    }
+                                case "echo":
+                                    {
+                                        BasicFunctions.EchoFunction(args);
+                                        break;
+                                    }
+                                case "runtime":
+                                    {
+                                        Console.WriteLine(BasicFunctions.RunTime(momentOfStart));
+                                        break;
+                                    }
+                                case "wiseman":
+                                    {
+                                        Console.WriteLine(BasicFunctions.GenerateWiseManMessage(Rand));
+                                        break;
+                                    }
+                                case "reboot":
+                                    {
+                                        Console.WriteLine("rebooting");
+                                        Global.PIT.Wait(1000);
+                                        Cosmos.System.Power.Reboot();
+                                        break;
+                                    }
+                                case "clearScreen":
+                                    {
+                                        Console.Clear();
+                                        break;
+                                    }
+                                case "mainMenu":
+                                    {
+                                        exitProgram = true;
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        Console.WriteLine("Unknown command!  Enter \"help\" for more information!");
+                                        break;
+                                    }
+                            }
+                        } while (!exitProgram);
                         break;
+
                     }
-                case "echo":
+                case "userManagment":
                     {
-                        BasicFunctions.EchoFunction(args);
-                        break;
+                        bool exitProgram = false;
+                        Console.Clear();
+                        do
+                        {
+                            
+                            Console.WriteLine("User Managment");
+                            Console.WriteLine("Input: ");
+
+                            var userInput = Console.ReadLine();
+
+                            string[] arr = userInput.Split(' ');
+
+                            switch (arr[0])
+                            {
+                                case "lock":
+                                    {
+                                        Console.WriteLine("Logging out...");
+                                        Global.PIT.Wait(1000);
+                                        logged_in = false;
+                                        break;
+                                    }
+                                case "vodka":
+                                    {
+                                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                                        {
+                                            Console.WriteLine("Missing Permissions");
+                                            break;
+                                        }
+                                        Console.WriteLine("Nyet, no vodka for you! //not implemented");
+                                        break;
+                                    }
+                                case "createUser":
+                                    {
+                                        Console.Clear();
+                                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                                        {
+                                            Console.WriteLine("Missing Permissions");
+                                            break;
+                                        }
+                                        UserManagement.CreateUser(UsersConf, CurrentUser);
+                                        break;
+                                    }
+                                case "deleteUser":
+                                    {
+                                        Console.Clear();
+                                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
+                                        {
+                                            Console.WriteLine("Missing Permissions");
+                                            break;
+                                        }
+                                        UserManagement.DeleteUser(UsersConf, CurrentUser);
+                                        break;
+                                    }
+                                case "mainMenu":
+                                    {
+                                        exitProgram = true;
+                                        break;
+                                    }
+                                default:
+                                    {
+                                        Console.WriteLine("Unknown command!  Enter \"help\" for more information!");
+                                        break;
+                                    }
+                            }
+                        } while (!exitProgram && logged_in);
+                       break;
                     }
-                case "runtime":
-                    {
-                        Console.WriteLine(BasicFunctions.RunTime(momentOfStart));
-                        break;
-                    }
-                case "wiseman":
-                    {
-                        Console.WriteLine(BasicFunctions.GenerateWiseManMessage(Rand));
-                        break;
-                    }
-                case "reboot":
-                    {
-                        Console.WriteLine("rebooting");
-                        Global.PIT.Wait(1000);
-                        Cosmos.System.Power.Reboot();
-                        break;
-                    }
+                
                 case "exit":
                     {
                         Console.WriteLine("exitting");
@@ -88,53 +200,7 @@ public class Kernel : Sys.Kernel
                         Cosmos.System.Power.Shutdown();
                         break;
                     }
-                case "cls":
-                case "clear":
-                case "clearScreen":
-                    {
-                        Console.Clear();
-                        break;
-                    }
-                case "logout":
-                case "lock":
-                    {
-                        Console.WriteLine("Logging out...");
-                        Global.PIT.Wait(1000);
-                        logged_in = false;
-                        break;
-                    }
-                case "vodka":
-                    {
-                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
-                        {
-                            Console.WriteLine("Missing Permissions");
-                            break;
-                        }
-                        Console.WriteLine("Nyet, no vodka for you! //not implemented");
-                        break;
-                    }
-                case "createUser":
-                    {
-                        Console.Clear();
-                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
-                        {
-                            Console.WriteLine("Missing Permissions");
-                            break;
-                        }
-                        UserManagement.CreateUser(UsersConf, CurrentUser);
-                        break;
-                    }
-                case "deleteUser":
-                    {
-                        Console.Clear();
-                        if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
-                        {
-                            Console.WriteLine("Missing Permissions");
-                            break;
-                        }
-                        UserManagement.DeleteUser(UsersConf, CurrentUser);
-                        break;
-                    }
+                
                 case "tetris":
                     {
                         BadTetris game = new BadTetris();
