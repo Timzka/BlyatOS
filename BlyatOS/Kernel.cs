@@ -212,6 +212,142 @@ public class Kernel : Sys.Kernel
                             break;
                         }
 
+                    case "fsinfo":
+                        {
+                            var disks = fs.Disks;
+                            foreach (var disk in disks)
+                            {
+                                if (disk?.Host == null)
+                                {
+                                    Console.WriteLine("Disk host unavailable");
+                                    continue;
+                                }
+
+                                Console.WriteLine(fsh.BlockDeviceTypeToString(disk.Host.Type));
+
+                                foreach (var partition in disk.Partitions)
+                                {
+                                    Console.WriteLine(partition.Host);
+                                    Console.WriteLine(partition.RootPath);
+                                    Console.WriteLine(partition.MountedFS.Size);
+                                }
+                            }
+                            break;
+                        }
+
+                    case "dir":
+                        {
+                            foreach (var d in dirs)
+                            {
+                                Console.WriteLine(TrimPath(d) + "/");
+                            }
+                            break;
+                        }
+
+                    case "ls":
+                        {
+                            const string dirMarker = "[D]";
+                            const string fileMarker = "[F]";
+                            foreach (var d in dirs)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Cyan;
+                                Console.WriteLine($"{dirMarker} {TrimPath(d)}/");
+                            }
+                            foreach (var f in files)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Gray;
+                                Console.WriteLine($"{fileMarker} {TrimPath(f)}");
+                            }
+                            Console.ResetColor();
+                            break;
+                        }
+
+                    case "mkdir":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: mkdir <name>");
+                                break;
+                            }
+                            var name = args[1];
+                            var path = PathCombine(current_directory, name);
+                            fs.CreateDirectory(path);
+                            Console.WriteLine($"Directory '{name}' created at '{path}'");
+                            break;
+                        }
+
+                    case "touch":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: touch <name>");
+                                break;
+                            }
+                            var name = args[1];
+                            var path = PathCombine(current_directory, name);
+                            fs.CreateFile(path);
+                            Console.WriteLine($"File '{name}' created at '{path}'");
+                            break;
+                        }
+
+                    case "cat":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: cat <filename>");
+                                break;
+                            }
+                            var fileArg = args[1];
+                            string path = IsAbsolute(fileArg) ? fileArg : PathCombine(current_directory, fileArg).TrimEnd('\\');
+
+                            if (!fsh.FileExists(path))
+                            {
+                                Console.WriteLine($"File not found: {path}");
+                                break;
+                            }
+
+                            try
+                            {
+                                Console.WriteLine(fsh.ReadAllText(path));
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Error reading file: " + ex.Message);
+                            }
+                            break;
+                        }
+
+                    case "cd":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: cd <directory>|..");
+                                break;
+                            }
+                            var target = args[1];
+                            if (target == "..")
+                            {
+                                if (IsRoot(current_directory))
+                                {
+                                    Console.WriteLine("Already at root");
+                                    break;
+                                }
+                                current_directory = GetParent(current_directory);
+                                Console.WriteLine($"Changed directory to '{current_directory}'");
+                                break;
+                            }
+
+                            string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(current_directory, target);
+                            if (!fsh.DirectoryExists(newPath))
+                            {
+                                Console.WriteLine($"Directory not found: {newPath}");
+                                break;
+                            }
+                            current_directory = EnsureTrailingSlash(newPath);
+                            Console.WriteLine($"Changed directory to '{current_directory}'");
+                            break;
+                        }
+
                     case "pwd":
                         Console.WriteLine(current_directory);
                         break;
