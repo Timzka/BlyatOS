@@ -1,4 +1,4 @@
-﻿using BadTetrisCS;
+using BadTetrisCS;
 using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Startupthings;
@@ -254,46 +254,4 @@ public class Kernel : Sys.Kernel
         }
     }
 
-    // Helpers
-
-    private static string TrimPath(string full)
-    {
-        if (string.IsNullOrEmpty(full)) return full;
-        var sep = full.TrimEnd('\\').LastIndexOf('\\');
-        if (sep >= 0 && sep < full.Length - 1)
-            return full.TrimEnd('\\').Substring(sep + 1);
-        return full.TrimEnd('\\');
-    }
-
-    private static bool IsAbsolute(string path) => path.Contains(":\\");
-    private static bool IsRoot(string path) => string.Equals(path, RootPath, StringComparison.Ordinal);
-
-    private static string EnsureTrailingSlash(string path)
-    {
-        if (!path.EndsWith("\\"))
-            return path + "\\";
-        return path;
-    }
-
-    private static string PathCombine(string baseDir, string child)
-    {
-        // Basis immer mit Backslash
-        baseDir = EnsureTrailingSlash(baseDir);
-        // Path.Combine entfernt doppelte Backslashes korrekt
-        var combined = Path.Combine(baseDir, child);
-        return EnsureTrailingSlash(combined);
-    }
-
-    private static string GetParent(string path)
-    {
-        path = EnsureTrailingSlash(path);
-        if (IsRoot(path)) return path;
-        // entfernt letzten Segment-Backslash
-        var trimmed = path.TrimEnd('\\');
-        var idx = trimmed.LastIndexOf('\\');
-        if (idx <= 2) // z.B. "0:\" -> Index 2
-            return RootPath;
-        var parent = trimmed.Substring(0, idx + 1);
-        return EnsureTrailingSlash(parent);
-    }
 }
