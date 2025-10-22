@@ -71,7 +71,8 @@ public class BasicFunctions
                 {
                     new Commands("tetris", "starts a game of tetris"),
                     new Commands("wiseman", "get a motivational message"),
-                    new Commands("OOGA", "placeholder command (not implemented yet)"),
+                    new Commands("OOGA", "jumpscare"),
+                    new Commands("screensave [number]", "animated screensaver with multiple bouncing images (default: 1)"),
                     new Commands("mainMenu", "return to main menu"),
                     new Commands("help [page]", "show this help page")
                 };
