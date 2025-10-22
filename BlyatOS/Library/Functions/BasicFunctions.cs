@@ -8,40 +8,34 @@ namespace BlyatOS.Library.Functions;
 
 public class BasicFunctions
 {
-    public static void Help(int? page)
+    public enum ListType
+    {
+        Main,
+        Blyatgames,
+        UserManagement
+    }
+
+    public static void Help(int? page, ListType listType = ListType.Main)
     {
         int commandsPerPage = 6;
 
-        var commands = new List<Commands>//command, description
-        {
-            new Commands("help [page]", "show help pages (optional page number)"),
-            new Commands("basic", "get access to basic functions"),
-            new Commands("userManagment", "get access to user managment"),
-            new Commands("version | v", "write version number"),
-            new Commands("echo", "echo text"),
-            new Commands("runtime", "show runtime"),
-            new Commands("dir | ls", "list directories (dir) or dirs+files (ls)"),
-            new Commands("tetris", "starts a game of tetris"),
-            new Commands("reboot", "reboot system") ,
-            new Commands("exit", "shutdown kernel"),
-            new Commands("createUser", "create new user"),
-            new Commands("lock | logout", "return to login"),
-            new Commands("deleteUser", "delete a user") ,
-            new Commands("wiseman", "get a motivational message"),
-            new Commands("clearScreen | clear | cls", "clear the console"),
-            new Commands("cat <file>", "print file contents"),
-            new Commands("mkdir <name>", "create directory"),
-            new Commands("touch <name>", "create empty file"),
-        };
+        var commands = GetCommandsForListType(listType);
 
         int totalCommands = commands.Count;
         int totalPages = (int)Math.Ceiling((double)totalCommands / commandsPerPage);
 
         int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
 
-        Console.WriteLine($"--- Help Page {currentPage}/{totalPages} ---");
+        Console.WriteLine($"--- Help Page {currentPage}/{totalPages} ({GetListTypeName(listType)}) ---");
 
         var wantedCommandsPage = commands.Skip((currentPage - 1) * commandsPerPage).Take(commandsPerPage);
+
+        if (currentPage == 1)
+        {
+            Console.WriteLine("---");
+            Console.WriteLine("command: help [page]");
+            Console.WriteLine("description: show help pages (optional page number)");
+        }
 
         foreach (var command in wantedCommandsPage)
         {
@@ -53,13 +47,72 @@ public class BasicFunctions
         Console.WriteLine();
     }
 
+    private static List<Commands> GetCommandsForListType(ListType listType)
+    {
+        switch (listType)
+        {
+            case ListType.Main:
+                return new List<Commands>
+                {
+                    new Commands("version | v", "write version number"),
+                    new Commands("echo", "echo text"),
+                    new Commands("runtime", "show runtime"),
+                    new Commands("reboot", "reboot system"),
+                    new Commands("clearScreen | clear | cls", "clear the console"),
+                    new Commands("userManagement", "access user management functions"),
+                    new Commands("blyatgames", "access games (tetris, wiseman, OOGA)"),
+                    new Commands("lock | logout", "return to login"),
+                    new Commands("exit", "shutdown kernel"),
+                    new Commands("pwd", "show current directory")
+                };
+
+            case ListType.Blyatgames:
+                return new List<Commands>
+                {
+                    new Commands("tetris", "starts a game of tetris"),
+                    new Commands("wiseman", "get a motivational message"),
+                    new Commands("OOGA", "placeholder command (not implemented yet)"),
+                    new Commands("mainMenu", "return to main menu"),
+                    new Commands("help [page]", "show this help page")
+                };
+
+            case ListType.UserManagement:
+                return new List<Commands>
+                {
+                    new Commands("vodka", "admin command (not implemented)"),
+                    new Commands("createUser", "create new user (admin only)"),
+                    new Commands("deleteUser", "delete a user (admin only)"),
+                    new Commands("mainMenu", "return to main menu"),
+                    new Commands("help [page]", "show this help page")
+                };
+
+            default:
+                return new List<Commands>();
+        }
+    }
+
+    private static string GetListTypeName(ListType listType)
+    {
+        switch (listType)
+        {
+            case ListType.Main:
+                return "Main Menu";
+            case ListType.Blyatgames:
+                return "Blyatgames";
+            case ListType.UserManagement:
+                return "User Management";
+            default:
+                return "Unknown";
+        }
+    }
+
     public static void EchoFunction(string[] payload)
     {
         if (payload.Length > 1)
         {
-            foreach (var thing in payload)
+            for (int i = 1; i < payload.Length; i++)
             {
-                Console.Write(thing + " ");
+                Console.Write(payload[i] + " ");
             }
             Console.WriteLine();
         }
@@ -84,6 +137,7 @@ public class BasicFunctions
         "If you think your are too small to make a difference, go gambling at SlotsOS",
         "It is better to just use BlyatOS forever instead of returning to Windows",
     };
+
     public static string GenerateWiseManMessage(Random rand)
     {
         int index = rand.Next(0, WiseManMessages.Length);
