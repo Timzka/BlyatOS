@@ -21,9 +21,20 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <None Remove="isoFiles\kusche256.raw" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Cosmos.Build" Version="0-*" NoWarn="NU1604" />
         <PackageReference Include="Cosmos.Debug.Kernel" Version="0-*" NoWarn="NU1604" />
         <PackageReference Include="Cosmos.System2" Version="0-*" NoWarn="NU1604" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="isoFiles\kusche256.raw">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <Deploy>True</Deploy>
+      </Content>
     </ItemGroup>
 
 </Project>

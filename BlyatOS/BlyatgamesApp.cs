@@ -5,6 +5,7 @@ using Cosmos.HAL;
 using Cosmos.System.Graphics;
 using System;
 using System.Drawing;
+using System.IO;
 
 namespace BlyatOS;
 
@@ -52,7 +53,9 @@ public class BlyatgamesApp
                         Console.Clear();
                         Canvas canvas;
                         canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(640, 480, ColorDepth.ColorDepth32));
-                        canvas.Clear(Color.Black);
+                        canvas.Clear(Color.Black); 
+                        Console.ReadKey();
+                        Bitmap kusche = RawToBitMap.LoadRawImageAutoDetect(@"0:\kusche256.raw");
                         while (true)
                         {
                             if (Cosmos.System.KeyboardManager.TryReadKey(out var keyInfo))
@@ -60,7 +63,7 @@ public class BlyatgamesApp
                                 break;
                             }
                             canvas.Clear(Color.Black);
-                            canvas.DrawImage(BitMaps.Bitmaps["barie"], rand.Next(0, 512), rand.Next(0, 360));
+                            canvas.DrawImage(kusche, rand.Next(0, 512), rand.Next(0, 360));
                             canvas.Display();
                             Global.PIT.Wait(500);
                         }

@@ -10,6 +10,7 @@ using Sys = Cosmos.System;
 using BlyatOS.Library.BlyatFileSystem;
 using Cosmos.System.ExtendedASCII;
 using System.Text;
+using Cosmos.System.FileSystem;
 
 namespace BlyatOS;
 
@@ -55,6 +56,15 @@ public class Kernel : Sys.Kernel
 
             if (Logged_In)
             {
+                foreach (var dir in dirs)
+                {
+                    Console.WriteLine(dir);
+                }
+                Console.WriteLine();
+                foreach (var file in files)
+                {
+                    Console.WriteLine(file);
+                }
                 Console.Write("Input: ");
                 var input = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(input))
