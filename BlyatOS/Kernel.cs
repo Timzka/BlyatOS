@@ -10,7 +10,7 @@ using Sys = Cosmos.System;
 using BlyatOS.Library.BlyatFileSystem;
 using Cosmos.System.ExtendedASCII;
 using System.Text;
-using Cosmos.System.FileSystem;
+using static BlyatOS.PathHelpers;
 
 namespace BlyatOS;
 
@@ -31,8 +31,8 @@ public class Kernel : Sys.Kernel
 
     protected override void BeforeRun()
     {
-        Encoding.RegisterProvider(CosmosEncodingProvider.Instance); //diese 3 zeilen sind für die codepage 437 (box drawing chars), so könnte man theoretisch eine
-        Console.InputEncoding = Encoding.GetEncoding(437); //funktion bauen, die UTF8 unterstützt
+        Encoding.RegisterProvider(CosmosEncodingProvider.Instance); //diese 3 zeilen sind fÃ¼r die codepage 437 (box drawing chars), so kÃ¶nnte man theoretisch eine
+        Console.InputEncoding = Encoding.GetEncoding(437); //funktion bauen, die UTF8 unterstÃ¼tzt
         Console.OutputEncoding = Encoding.GetEncoding(437);
 
         OnStartUp.RunLoadingScreenThing();
@@ -132,6 +132,143 @@ public class Kernel : Sys.Kernel
                             Cosmos.System.Power.Shutdown();
                             break;
                         }
+
+                    case "fsinfo":
+                        {
+                            var disks = fs.Disks;
+                            foreach (var disk in disks)
+                            {
+                                if (disk?.Host == null)
+                                {
+                                    Console.WriteLine("Disk host unavailable");
+                                    continue;
+                                }
+
+                                Console.WriteLine(fsh.BlockDeviceTypeToString(disk.Host.Type));
+
+                                foreach (var partition in disk.Partitions)
+                                {
+                                    Console.WriteLine(partition.Host);
+                                    Console.WriteLine(partition.RootPath);
+                                    Console.WriteLine(partition.MountedFS.Size);
+                                }
+                            }
+                            break;
+                        }
+
+                    case "dir":
+                        {
+                            foreach (var d in dirs)
+                            {
+                                Console.WriteLine(TrimPath(d) + "/");
+                            }
+                            break;
+                        }
+
+                    case "ls":
+                        {
+                            const string dirMarker = "[D]";
+                            const string fileMarker = "[F]";
+                            foreach (var d in dirs)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Cyan;
+                                Console.WriteLine($"{dirMarker} {TrimPath(d)}/");
+                            }
+                            foreach (var f in files)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Gray;
+                                Console.WriteLine($"{fileMarker} {TrimPath(f)}");
+                            }
+                            Console.ResetColor();
+                            break;
+                        }
+
+                    case "mkdir":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: mkdir <name>");
+                                break;
+                            }
+                            var name = args[1];
+                            var path = PathCombine(CurrentDirectory, name);
+                            fs.CreateDirectory(path);
+                            Console.WriteLine($"Directory '{name}' created at '{path}'");
+                            break;
+                        }
+
+                    case "touch":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: touch <name>");
+                                break;
+                            }
+                            var name = args[1];
+                            var path = PathCombine(CurrentDirectory, name);
+                            fs.CreateFile(path);
+                            Console.WriteLine($"File '{name}' created at '{path}'");
+                            break;
+                        }
+
+                    case "cat":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: cat <filename>");
+                                break;
+                            }
+                            var fileArg = args[1];
+                            string path = IsAbsolute(fileArg) ? fileArg : PathCombine(CurrentDirectory, fileArg).TrimEnd('\\');
+
+                            if (!fsh.FileExists(path))
+                            {
+                                Console.WriteLine($"File not found: {path}");
+                                break;
+                            }
+
+                            try
+                            {
+                                Console.WriteLine(fsh.ReadAllText(path));
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Error reading file: " + ex.Message);
+                            }
+                            break;
+                        }
+
+                    case "cd":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: cd <directory>|..");
+                                break;
+                            }
+                            var target = args[1];
+                            if (target == "..")
+                            {
+                                if (IsRoot(CurrentDirectory, RootPath))
+                                {
+                                    Console.WriteLine("Already at root");
+                                    break;
+                                }
+                                CurrentDirectory = GetParent(CurrentDirectory, RootPath);
+                                Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
+                                break;
+                            }
+
+                            string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(CurrentDirectory, target);
+                            if (!fsh.DirectoryExists(newPath))
+                            {
+                                Console.WriteLine($"Directory not found: {newPath}");
+                                break;
+                            }
+                            CurrentDirectory = EnsureTrailingSlash(newPath);
+                            Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
+                            break;
+                        }
+
                     case "pwd":
                         Console.WriteLine(CurrentDirectory);
                         break;
