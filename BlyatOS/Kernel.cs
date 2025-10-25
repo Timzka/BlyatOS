@@ -1,4 +1,4 @@
-﻿using BadTetrisCS;
+using BadTetrisCS;
 using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Startupthings;
@@ -8,32 +8,40 @@ using System.IO;
 using Cosmos.System.ScanMaps;
 using Sys = Cosmos.System;
 using BlyatOS.Library.BlyatFileSystem;
+using Cosmos.System.ExtendedASCII;
+using System.Text;
 
 namespace BlyatOS;
 
 public class Kernel : Sys.Kernel
 {
-    DateTime momentOfStart;
-    string versionString = "0.9";
+    DateTime MomentOfStart;
+    string VersionInfo = "0.9";
     private UsersConfig UsersConf = new UsersConfig();
     private int CurrentUser;
-    bool logged_in = false;
+    bool Logged_In = false;
     Random Rand = new Random(DateTime.Now.Millisecond);
 
     Sys.FileSystem.CosmosVFS fs;
     FileSystemHelpers fsh = new FileSystemHelpers();
 
     private const string RootPath = @"0:\";
-    private string current_directory = RootPath; // immer mit abschlie�endem Backslash
+    private string CurrentDirectory = RootPath; 
 
     protected override void BeforeRun()
     {
+        Encoding.RegisterProvider(CosmosEncodingProvider.Instance); //diese 3 zeilen sind für die codepage 437 (box drawing chars), so könnte man theoretisch eine
+        Console.InputEncoding = Encoding.GetEncoding(437); //funktion bauen, die UTF8 unterstützt
+        Console.OutputEncoding = Encoding.GetEncoding(437);
+
+        OnStartUp.RunLoadingScreenThing();
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
 
         Sys.KeyboardManager.SetKeyLayout(new DE_Standard());
-        Console.WriteLine($"BlyatOS v{versionString} booted successfully. Type help for a list of valid commands");
-        momentOfStart = DateTime.Now;
+        
+        Console.WriteLine($"BlyatOS v{VersionInfo} booted successfully. Type help for a list of valid commands");
+        MomentOfStart = DateTime.Now;
         Global.PIT.Wait(1000);
     }
 
@@ -42,10 +50,10 @@ public class Kernel : Sys.Kernel
         try
         {
             // Verzeichnislisten immer aktuell holen
-            string[] dirs = fsh.GetDirectories(current_directory);
-            string[] files = fsh.GetFiles(current_directory);
+            string[] dirs = fsh.GetDirectories(CurrentDirectory);
+            string[] files = fsh.GetFiles(CurrentDirectory);
 
-            if (logged_in)
+            if (Logged_In)
             {
                 Console.Write("Input: ");
                 var input = Console.ReadLine();
@@ -60,155 +68,58 @@ public class Kernel : Sys.Kernel
                             int? page = null;
                             if (args.Length > 1 && int.TryParse(args[1], out int p)) page = p;
                             Console.Clear();
-                            BasicFunctions.Help(page);
+                            BasicFunctions.Help(page, BasicFunctions.ListType.Main);
                             break;
                         }
-                    case "basic":
+                    case "version":
                         {
-
-                            bool exitProgram = false;
-                            Console.Clear();
-                            //Console.WriteLine("Enter 'mainMenu'");
-                            do
-                            {
-                                Console.WriteLine("Basic");
-                                Console.WriteLine("Input: ");
-
-                                var userInput = Console.ReadLine();
-
-                                string[] arr = userInput.Split(' ');
-
-                                switch (arr[0])
-                                {
-                                    case "version":
-                                        {
-                                            Console.WriteLine("Blyat version " + versionString);
-                                            break;
-                                        }
-                                    case "echo":
-                                        {
-                                            BasicFunctions.EchoFunction(args);
-                                            break;
-                                        }
-                                    case "runtime":
-                                        {
-                                            Console.WriteLine(BasicFunctions.RunTime(momentOfStart));
-                                            break;
-                                        }
-                                    case "wiseman":
-                                        {
-                                            Console.WriteLine(BasicFunctions.GenerateWiseManMessage(Rand));
-                                            break;
-                                        }
-                                    case "reboot":
-                                        {
-                                            Console.WriteLine("rebooting");
-                                            Global.PIT.Wait(1000);
-                                            Cosmos.System.Power.Reboot();
-                                            break;
-                                        }
-                                    case "clearScreen":
-                                        {
-                                            Console.Clear();
-                                            break;
-                                        }
-                                    case "mainMenu":
-                                        {
-                                            exitProgram = true;
-                                            break;
-                                        }
-                                    default:
-                                        {
-                                            Console.WriteLine("Unknown command!  Enter \"help\" for more information!");
-                                            break;
-                                        }
-                                }
-                            } while (!exitProgram);
+                            Console.WriteLine("Blyat version " + VersionInfo);
                             break;
-
                         }
-                    case "userManagment":
+                    case "echo":
                         {
-                            bool exitProgram = false;
-                            Console.Clear();
-                            do
-                            {
-
-                                Console.WriteLine("User Managment");
-                                Console.WriteLine("Input: ");
-
-                                var userInput = Console.ReadLine();
-
-                                string[] arr = userInput.Split(' ');
-
-                                switch (arr[0])
-                                {
-                                    case "lock":
-                                        {
-                                            Console.WriteLine("Logging out...");
-                                            Global.PIT.Wait(1000);
-                                            logged_in = false;
-                                            break;
-                                        }
-                                    case "vodka":
-                                        {
-                                            if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
-                                            {
-                                                Console.WriteLine("Missing Permissions");
-                                                break;
-                                            }
-                                            Console.WriteLine("Nyet, no vodka for you! //not implemented");
-                                            break;
-                                        }
-                                    case "createUser":
-                                        {
-                                            Console.Clear();
-                                            if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
-                                            {
-                                                Console.WriteLine("Missing Permissions");
-                                                break;
-                                            }
-                                            UserManagement.CreateUser(UsersConf, CurrentUser);
-                                            break;
-                                        }
-                                    case "deleteUser":
-                                        {
-                                            Console.Clear();
-                                            if (!UserManagement.CheckPermissions(CurrentUser, UsersConf, UsersConfig.Permissions.Admin))
-                                            {
-                                                Console.WriteLine("Missing Permissions");
-                                                break;
-                                            }
-                                            UserManagement.DeleteUser(UsersConf, CurrentUser);
-                                            break;
-                                        }
-                                    case "mainMenu":
-                                        {
-                                            exitProgram = true;
-                                            break;
-                                        }
-                                    default:
-                                        {
-                                            Console.WriteLine("Unknown command!  Enter \"help\" for more information!");
-                                            break;
-                                        }
-                                }
-                            } while (!exitProgram && logged_in);
+                            BasicFunctions.EchoFunction(args);
                             break;
                         }
-
+                    case "runtime":
+                        {
+                            Console.WriteLine(BasicFunctions.RunTime(MomentOfStart));
+                            break;
+                        }
+                    case "reboot":
+                        {
+                            Console.WriteLine("rebooting");
+                            Global.PIT.Wait(1000);
+                            Cosmos.System.Power.Reboot();
+                            break;
+                        }
+                    case "clearScreen":
+                        {
+                            Console.Clear();
+                            break;
+                        }
+                    case "userManagement":
+                        {
+                            UserManagementApp.Run(CurrentUser, UsersConf);
+                            break;
+                        }
+                    case "blyatgames":
+                        {
+                            BlyatgamesApp.Run(Rand);
+                            break;
+                        }
+                    case "lock":
+                        {
+                            Console.WriteLine("Logging out...");
+                            Global.PIT.Wait(1000);
+                            Logged_In = false;
+                            break;
+                        }
                     case "exit":
                         {
                             Console.WriteLine("exitting");
                             Global.PIT.Wait(1000);
                             Cosmos.System.Power.Shutdown();
-                            break;
-                        }
-
-                    case "tetris":
-                        {
-                            BadTetris game = new BadTetris();
-                            game.Run();
                             break;
                         }
 
@@ -349,11 +260,11 @@ public class Kernel : Sys.Kernel
                         }
 
                     case "pwd":
-                        Console.WriteLine(current_directory);
+                        Console.WriteLine(CurrentDirectory);
                         break;
 
                     default:
-                        Console.WriteLine("Unknown command! Enter \"help\" for more information!");
+                        Console.WriteLine("Unknown command! Type \"help\" for help or \"exit\" to return!");
                         break;
                 }
             }
@@ -374,7 +285,7 @@ public class Kernel : Sys.Kernel
                     c++;
                     Console.Clear();
                 }
-                logged_in = true;
+                Logged_In = true;
                 Console.Clear();
             }
             }
@@ -390,46 +301,4 @@ public class Kernel : Sys.Kernel
         }
     }
 
-    // Helpers
-
-    private static string TrimPath(string full)
-    {
-        if (string.IsNullOrEmpty(full)) return full;
-        var sep = full.TrimEnd('\\').LastIndexOf('\\');
-        if (sep >= 0 && sep < full.Length - 1)
-            return full.TrimEnd('\\').Substring(sep + 1);
-        return full.TrimEnd('\\');
-    }
-
-    private static bool IsAbsolute(string path) => path.Contains(":\\");
-    private static bool IsRoot(string path) => string.Equals(path, RootPath, StringComparison.Ordinal);
-
-    private static string EnsureTrailingSlash(string path)
-    {
-        if (!path.EndsWith("\\"))
-            return path + "\\";
-        return path;
-    }
-
-    private static string PathCombine(string baseDir, string child)
-    {
-        // Basis immer mit Backslash
-        baseDir = EnsureTrailingSlash(baseDir);
-        // Path.Combine entfernt doppelte Backslashes korrekt
-        var combined = Path.Combine(baseDir, child);
-        return EnsureTrailingSlash(combined);
-    }
-
-    private static string GetParent(string path)
-    {
-        path = EnsureTrailingSlash(path);
-        if (IsRoot(path)) return path;
-        // entfernt letzten Segment-Backslash
-        var trimmed = path.TrimEnd('\\');
-        var idx = trimmed.LastIndexOf('\\');
-        if (idx <= 2) // z.B. "0:\" -> Index 2
-            return RootPath;
-        var parent = trimmed.Substring(0, idx + 1);
-        return EnsureTrailingSlash(parent);
-    }
 }

@@ -7,7 +7,7 @@ using static BlyatOS.Library.Configs.UsersConfig;
 
 namespace BlyatOS.Library.Configs;
 
-internal class UsersConfig
+public class UsersConfig
 {
     public List<User> Users = new()
     {

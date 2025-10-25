@@ -43,18 +43,18 @@ public class OnStartUp
             Console.SetCursorPosition(0, 3);
 
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            for (int i = 0; i < filterLength; i++) Console.Write("#");
+            for (int i = 0; i < filterLength; i++) Console.Write("█");
 
             Console.ForegroundColor = ConsoleColor.White;
             if (len > 0)
             {
-                for (int i = 0; i < len; i++) Console.Write("#");
+                for (int i = 0; i < len; i++) Console.Write("█");
 
                 // "animation"
                 Console.ForegroundColor = len % 3 == 0 ? ConsoleColor.DarkYellow :
                                           len % 3 == 1 ? ConsoleColor.Red :
                                                           ConsoleColor.Yellow;
-                Console.Write("#");
+                Console.Write("█");
             }
 
             Console.ForegroundColor = ConsoleColor.Gray;
