@@ -43,6 +43,7 @@ public class Kernel : Sys.Kernel
         
         Console.WriteLine($"BlyatOS v{VersionInfo} booted successfully. Type help for a list of valid commands");
         MomentOfStart = DateTime.Now;
+
         Global.PIT.Wait(1000);
     }
 
@@ -56,15 +57,6 @@ public class Kernel : Sys.Kernel
 
             if (Logged_In)
             {
-                foreach (var dir in dirs)
-                {
-                    Console.WriteLine(dir);
-                }
-                Console.WriteLine();
-                foreach (var file in files)
-                {
-                    Console.WriteLine(file);
-                }
                 Console.Write("Input: ");
                 var input = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(input))
@@ -272,6 +264,111 @@ public class Kernel : Sys.Kernel
                     case "pwd":
                         Console.WriteLine(CurrentDirectory);
                         break;
+
+                    case "loadiso":
+                        {
+                            Console.WriteLine("=== Testing direct ISO access ===");
+                            try
+                            {
+                                // Versuche kusche256.raw direkt von der ISO zu laden
+                                var data = BlyatOS.Library.Helpers.ISO9660Reader.LoadFileFromISO("kusche256.raw");
+                                
+                                if (data != null && data.Length > 0)
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    Console.WriteLine($"SUCCESS! Loaded {data.Length} bytes from ISO!");
+                                    Console.ResetColor();
+                                    
+                                    // Optinal: Schreibe ins VFS
+                                    Console.WriteLine("Schreibe nach 0:\\kusche256.raw...");
+                                    File.WriteAllBytes(@"0:\kusche256.raw", data);
+                                    Console.WriteLine("Fertig! Datei ist jetzt im VFS verfügbar.");
+                                }
+                                else
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("FAILED: Could not load file from ISO");
+                                    Console.ResetColor();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error: {ex.Message}");
+                            }
+                            break;
+                        }
+
+                    case "mountcd":
+                        {
+                            Console.WriteLine("Attempting to mount CD-ROM...");
+                            try
+                            {
+                                var disks = fs.Disks;
+                                foreach (var disk in disks)
+                                {
+                                    if (disk?.Host == null) continue;
+                                    
+                                    if (disk.Host.Type == Cosmos.HAL.BlockDevice.BlockDeviceType.RemovableCD)
+                                    {
+                                        Console.WriteLine("Found CD-ROM drive, mounting...");
+                                        disk.Mount();
+                                        Console.WriteLine("Mount attempted. Run 'findkusche' to check.");
+                                        break;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error: {ex.Message}");
+                            }
+                            break;
+                        }
+
+                    case "findkusche":
+                        {
+                            Console.WriteLine("=== Searching for kusche256.raw ===");
+                            Console.WriteLine();
+                            
+                            // Zeige alle verfügbaren Laufwerke
+                            Console.WriteLine("Available drives:");
+                            var disks = fs.Disks;
+                            foreach (var disk in disks)
+                            {
+                                if (disk?.Host == null) continue;
+                                
+                                Console.WriteLine($"  Type: {fsh.BlockDeviceTypeToString(disk.Host.Type)}");
+                                foreach (var partition in disk.Partitions)
+                                {
+                                    Console.WriteLine($"    Drive: {partition.RootPath}");
+                                    
+                                    // Prüfe auf kusche256.raw in diesem Laufwerk
+                                    try
+                                    {
+                                        string[] searchPaths = new[] { "", "isoFiles\\" };
+                                        foreach (var subPath in searchPaths)
+                                        {
+                                            string testPath = Path.Combine(partition.RootPath, subPath, "kusche256.raw");
+                                            if (File.Exists(testPath))
+                                            {
+                                                FileInfo fi = new FileInfo(testPath);
+                                                Console.ForegroundColor = ConsoleColor.Green;
+                                                Console.WriteLine($"      FOUND: {testPath} ({fi.Length} bytes)");
+                                                Console.ResetColor();
+                                            }
+                                            else
+                                            {
+                                                Console.ForegroundColor = ConsoleColor.Red;
+                                                Console.WriteLine(" Not found in: " + Path.Combine(partition.RootPath, subPath));
+                                                Console.ResetColor();
+                                            }
+                                        }
+                                    }
+                                    catch { }
+                                }
+                            }
+                            Console.WriteLine();
+                            break;
+                        }
 
                     default:
                         Console.WriteLine("Unknown command! Type \"help\" for help or \"exit\" to return!");
