@@ -10,6 +10,7 @@ using Sys = Cosmos.System;
 using BlyatOS.Library.BlyatFileSystem;
 using Cosmos.System.ExtendedASCII;
 using System.Text;
+using static BlyatOS.PathHelpers;
 
 namespace BlyatOS;
 
@@ -181,7 +182,7 @@ public class Kernel : Sys.Kernel
                                 break;
                             }
                             var name = args[1];
-                            var path = PathCombine(current_directory, name);
+                            var path = PathCombine(CurrentDirectory, name);
                             fs.CreateDirectory(path);
                             Console.WriteLine($"Directory '{name}' created at '{path}'");
                             break;
@@ -195,7 +196,7 @@ public class Kernel : Sys.Kernel
                                 break;
                             }
                             var name = args[1];
-                            var path = PathCombine(current_directory, name);
+                            var path = PathCombine(CurrentDirectory, name);
                             fs.CreateFile(path);
                             Console.WriteLine($"File '{name}' created at '{path}'");
                             break;
@@ -209,7 +210,7 @@ public class Kernel : Sys.Kernel
                                 break;
                             }
                             var fileArg = args[1];
-                            string path = IsAbsolute(fileArg) ? fileArg : PathCombine(current_directory, fileArg).TrimEnd('\\');
+                            string path = IsAbsolute(fileArg) ? fileArg : PathCombine(CurrentDirectory, fileArg).TrimEnd('\\');
 
                             if (!fsh.FileExists(path))
                             {
@@ -238,24 +239,24 @@ public class Kernel : Sys.Kernel
                             var target = args[1];
                             if (target == "..")
                             {
-                                if (IsRoot(current_directory))
+                                if (IsRoot(CurrentDirectory, RootPath))
                                 {
                                     Console.WriteLine("Already at root");
                                     break;
                                 }
-                                current_directory = GetParent(current_directory);
-                                Console.WriteLine($"Changed directory to '{current_directory}'");
+                                CurrentDirectory = GetParent(CurrentDirectory, RootPath);
+                                Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
                                 break;
                             }
 
-                            string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(current_directory, target);
+                            string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(CurrentDirectory, target);
                             if (!fsh.DirectoryExists(newPath))
                             {
                                 Console.WriteLine($"Directory not found: {newPath}");
                                 break;
                             }
-                            current_directory = EnsureTrailingSlash(newPath);
-                            Console.WriteLine($"Changed directory to '{current_directory}'");
+                            CurrentDirectory = EnsureTrailingSlash(newPath);
+                            Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
                             break;
                         }
 
