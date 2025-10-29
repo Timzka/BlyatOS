@@ -50,7 +50,14 @@ public class BlyatgamesApp
                     }
                 case "OOGA":
                     {
-
+                        if(!File.Exists(@"0:\kusche128.bmp"))
+                        {
+                            Console.WriteLine("OOGA needs the file \"kusche128.bmp\" in the root of drive 0: to run!");
+                            Console.WriteLine("Press any key to continue...");
+                            Console.ReadKey();
+                            Console.Clear();
+                            break;
+                        }
                         Console.Clear();
                         Canvas canvas;
                         canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(640, 480, ColorDepth.ColorDepth32));

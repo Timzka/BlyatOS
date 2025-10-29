@@ -98,6 +98,8 @@ public class Kernel : Sys.Kernel
                             break;
                         }
                     case "clearScreen":
+                    case "cls":
+                    case "clear":
                         {
                             Console.Clear();
                             break;
@@ -110,14 +112,6 @@ public class Kernel : Sys.Kernel
                     case "blyatgames":
                         {
                             BlyatgamesApp.Run(Rand);
-                            break;
-                        }
-                    case "loadkusche":
-                        {
-
-                            byte[] data = File.ReadAllBytes(@"0:\kusche256.raw");
-
-                            Console.WriteLine("Dateigröße: " + data.Length + " Bytes");
                             break;
                         }
                     case "lock":
@@ -134,7 +128,6 @@ public class Kernel : Sys.Kernel
                             Cosmos.System.Power.Shutdown();
                             break;
                         }
-
                     case "fsinfo":
                         {
                             var disks = fs.Disks;
@@ -212,34 +205,6 @@ public class Kernel : Sys.Kernel
                             Console.WriteLine($"File '{name}' created at '{path}'");
                             break;
                         }
-
-                    case "cat":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: cat <filename>");
-                                break;
-                            }
-                            var fileArg = args[1];
-                            string path = IsAbsolute(fileArg) ? fileArg : PathCombine(CurrentDirectory, fileArg).TrimEnd('\\');
-
-                            if (!fsh.FileExists(path))
-                            {
-                                Console.WriteLine($"File not found: {path}");
-                                break;
-                            }
-
-                            try
-                            {
-                                Console.WriteLine(fsh.ReadAllText(path));
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Error reading file: " + ex.Message);
-                            }
-                            break;
-                        }
-
                     case "cd":
                         {
                             if (args.Length < 2)
@@ -298,6 +263,7 @@ public class Kernel : Sys.Kernel
                             Console.WriteLine();
                             break;
                         }
+                    case "cat":
                     case "readfile":
                         {
                             if (args.Length < 2)
