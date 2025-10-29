@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -49,4 +50,43 @@ public class PathHelpers
         var parent = trimmed.Substring(0, idx + 1);
         return EnsureTrailingSlash(parent);
     }
+
+    public static void SearchFileRecursive(string currentPath, string fileName)
+    {
+        try
+        {
+            // Check file in current directory
+            string testFile = Path.Combine(currentPath, fileName);
+            if (File.Exists(testFile))
+            {
+                FileInfo fi = new FileInfo(testFile);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"      FOUND: {testFile} ({fi.Length} bytes)");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("      Not found in: " + currentPath);
+                Console.ResetColor();
+            }
+
+            // Traverse directories
+            var dirs = Directory.GetDirectories(currentPath);
+            foreach (var dir in dirs)
+            {
+                // WICHTIG: vollständigen Pfad zusammensetzen
+                string fullDirPath = Path.Combine(currentPath, dir);
+
+                SearchFileRecursive(fullDirPath, fileName);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine($"  [WARN] Could not access: {currentPath} ({ex.Message})");
+            Console.ResetColor();
+        }
+    }
+
 }

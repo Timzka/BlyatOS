@@ -17,7 +17,7 @@ public class BasicFunctions
 
     public static void Help(int? page, ListType listType = ListType.Main)
     {
-        int commandsPerPage = 6;
+        int commandsPerPage = 5;
 
         var commands = GetCommandsForListType(listType);
 
@@ -63,7 +63,17 @@ public class BasicFunctions
                     new Commands("blyatgames", "access games (tetris, wiseman, OOGA)"),
                     new Commands("lock | logout", "return to login"),
                     new Commands("exit", "shutdown kernel"),
-                    new Commands("pwd", "show current directory")
+                    new Commands("pwd", "show current directory"),
+                    new Commands("ls", "show all directories and files in Currentpath"),
+                    new Commands("dir", "show all directories in Currentpath"),
+                    new Commands("cd [dir]", "change currentpath to a directory withing the previous. Use \"cd ..\" to go back"),
+                    new Commands("pwd", "show current directory"),
+                    new Commands("findkusche [filename]", "finds a file for you, giving you its path on any disk and any directory, example: \"findkusche kudzu.txt\""),
+                    new Commands("fsinfo", "get information about the file system"),
+                    new Commands("mkdir [name]", "create a new directory with [name]"),
+                    new Commands("touch [filename]", "create a new file with [name], if no ending is given, it will automatically assume .blyat"),
+                    new Commands("readfile | cat [file]", "read a file, if it is an image, display it, else write the text. if root isnt given, go from currentpath"),
+
                 };
 
             case ListType.Blyatgames:
@@ -71,9 +81,9 @@ public class BasicFunctions
                 {
                     new Commands("tetris", "starts a game of tetris"),
                     new Commands("wiseman", "get a motivational message"),
-                    new Commands("OOGA", "placeholder command (not implemented yet)"),
-                    new Commands("mainMenu", "return to main menu"),
-                    new Commands("help [page]", "show this help page")
+                    new Commands("OOGA", "jumpscare"),
+                    new Commands("screensave [number]", "animated screensaver with multiple bouncing images (default: 1)"),
+                    new Commands("mainMenu | exit", "return to main menu")
                 };
 
             case ListType.UserManagement:
@@ -82,8 +92,7 @@ public class BasicFunctions
                     new Commands("vodka", "admin command (not implemented)"),
                     new Commands("createUser", "create new user (admin only)"),
                     new Commands("deleteUser", "delete a user (admin only)"),
-                    new Commands("mainMenu", "return to main menu"),
-                    new Commands("help [page]", "show this help page")
+                    new Commands("mainMenu | exit", "return to main menu")
                 };
 
             default:

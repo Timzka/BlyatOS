@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
@@ -18,12 +18,23 @@
         <Description>Use VMware Player or Workstation to deploy and debug.</Description>
         <PxeInterface>192.168.0.8</PxeInterface>
         <DebugEnabled>False</DebugEnabled>
+        <OptimizationLevel>1</OptimizationLevel>
     </PropertyGroup>
+
+    <ItemGroup>
+      <None Remove="isoFiles\Einleitung.txt" />
+      <None Remove="isoFiles\kusche256.raw" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Cosmos.Build" Version="0-*" NoWarn="NU1604" />
         <PackageReference Include="Cosmos.Debug.Kernel" Version="0-*" NoWarn="NU1604" />
         <PackageReference Include="Cosmos.System2" Version="0-*" NoWarn="NU1604" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Resource Include="isoFiles\Einleitung.txt" />
+      <Resource Include="isoFiles\kusche256.raw" />
     </ItemGroup>
 
 </Project>

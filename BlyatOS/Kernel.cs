@@ -11,6 +11,11 @@ using BlyatOS.Library.BlyatFileSystem;
 using Cosmos.System.ExtendedASCII;
 using System.Text;
 using static BlyatOS.PathHelpers;
+using static BlyatOS.Library.Configs.UsersConfig;
+using Cosmos.System.FileSystem.VFS;
+using Cosmos.System.Graphics;
+using System.Drawing;
+using BlyatOS.Library.Helpers;
 
 namespace BlyatOS;
 
@@ -34,15 +39,13 @@ public class Kernel : Sys.Kernel
         Encoding.RegisterProvider(CosmosEncodingProvider.Instance); //diese 3 zeilen sind für die codepage 437 (box drawing chars), so könnte man theoretisch eine
         Console.InputEncoding = Encoding.GetEncoding(437); //funktion bauen, die UTF8 unterstützt
         Console.OutputEncoding = Encoding.GetEncoding(437);
-
         OnStartUp.RunLoadingScreenThing();
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
-
         Sys.KeyboardManager.SetKeyLayout(new DE_Standard());
-        
         Console.WriteLine($"BlyatOS v{VersionInfo} booted successfully. Type help for a list of valid commands");
         MomentOfStart = DateTime.Now;
+
         Global.PIT.Wait(1000);
     }
 
@@ -95,6 +98,8 @@ public class Kernel : Sys.Kernel
                             break;
                         }
                     case "clearScreen":
+                    case "cls":
+                    case "clear":
                         {
                             Console.Clear();
                             break;
@@ -123,7 +128,6 @@ public class Kernel : Sys.Kernel
                             Cosmos.System.Power.Shutdown();
                             break;
                         }
-
                     case "fsinfo":
                         {
                             var disks = fs.Disks;
@@ -196,39 +200,11 @@ public class Kernel : Sys.Kernel
                                 break;
                             }
                             var name = args[1];
-                            var path = PathCombine(CurrentDirectory, name);
+                            var path = CurrentDirectory + name;//PathCombine(CurrentDirectory, name);
                             fs.CreateFile(path);
                             Console.WriteLine($"File '{name}' created at '{path}'");
                             break;
                         }
-
-                    case "cat":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: cat <filename>");
-                                break;
-                            }
-                            var fileArg = args[1];
-                            string path = IsAbsolute(fileArg) ? fileArg : PathCombine(CurrentDirectory, fileArg).TrimEnd('\\');
-
-                            if (!fsh.FileExists(path))
-                            {
-                                Console.WriteLine($"File not found: {path}");
-                                break;
-                            }
-
-                            try
-                            {
-                                Console.WriteLine(fsh.ReadAllText(path));
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("Error reading file: " + ex.Message);
-                            }
-                            break;
-                        }
-
                     case "cd":
                         {
                             if (args.Length < 2)
@@ -260,9 +236,71 @@ public class Kernel : Sys.Kernel
                             break;
                         }
 
+
                     case "pwd":
                         Console.WriteLine(CurrentDirectory);
                         break;
+
+                    case "findkusche":
+                        {
+                            Console.WriteLine($"=== Searching for  {args[1]}===");
+                            Console.WriteLine();
+
+                            var disks = fs.Disks;
+                            foreach (var disk in disks)
+                            {
+                                if (disk?.Host == null) continue;
+                                
+                                Console.WriteLine($"Disk Type: {fsh.BlockDeviceTypeToString(disk.Host.Type)}");
+
+                                foreach (var partition in disk.Partitions)
+                                {
+                                    Console.WriteLine($"  Checking: {partition.RootPath}");
+                                    SearchFileRecursive(partition.RootPath, args[1]);
+                                }
+                            }
+
+                            Console.WriteLine();
+                            break;
+                        }
+                    case "cat":
+                    case "readfile":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: readfile <path>");
+                                break;
+                            }
+
+                            string path = IsAbsolute(args[1])
+                                ? args[1]
+                                : PathCombine(CurrentDirectory, args[1]).TrimEnd('\\');
+
+                            if (!File.Exists(path))
+                            {
+                                Console.WriteLine($"File not found: {path}");
+                                break;
+                            }
+
+                            if (path.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                            {
+                                ReadDisplay.DisplayBitmap(path);
+                            }
+                            else
+                            {
+                                // For small files, read all at once
+                                if (new FileInfo(path).Length < 1024 * 1024) // 1MB
+                                {
+                                    Console.WriteLine(ReadDisplay.ReadTextFile(path));
+                                }
+                                else
+                                {
+                                    // For larger files, read in chunks
+                                    ReadDisplay.ReadTextFileInChunks(path);
+                                }
+                            }
+                            break;
+                        }
 
                     default:
                         Console.WriteLine("Unknown command! Type \"help\" for help or \"exit\" to return!");
@@ -301,5 +339,4 @@ public class Kernel : Sys.Kernel
             Console.WriteLine("An error occured: " + ex.Message);
         }
     }
-
 }
