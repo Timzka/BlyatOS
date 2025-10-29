@@ -200,7 +200,21 @@ public class Kernel : Sys.Kernel
                                 break;
                             }
                             var name = args[1];
+                            
+                            if (!name.Contains('.'))
+                            {
+                                name += ".blyat";
+                            }
+                            if (name.EndsWith("."))
+                            {
+                                name += "blyat";
+                            }
                             var path = CurrentDirectory + name;//PathCombine(CurrentDirectory, name);
+                            if (File.Exists(path))
+                            {
+                                Console.WriteLine($"File '{name}' already exists at '{path}'");
+                                break;
+                            }
                             fs.CreateFile(path);
                             Console.WriteLine($"File '{name}' created at '{path}'");
                             break;
@@ -235,8 +249,25 @@ public class Kernel : Sys.Kernel
                             Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
                             break;
                         }
-
-
+                    case "delfile":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: delfile <filename>");
+                                break;
+                            }
+                            
+                            var name = args[1];
+                            var path = IsAbsolute(name) ? name : PathCombine(CurrentDirectory, name);
+                            if (!File.Exists(path))
+                            {
+                                Console.WriteLine($"File not found: {path}");
+                                break;
+                            }
+                            File.Delete(path);
+                            Console.WriteLine($"File '{name}' deleted from '{path}'");
+                            break;
+                        }
                     case "pwd":
                         Console.WriteLine(CurrentDirectory);
                         break;

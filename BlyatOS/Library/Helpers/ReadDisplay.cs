@@ -28,8 +28,16 @@ namespace BlyatOS.Library.Helpers
                 Bitmap bmp = ImageHelpers.LoadBMP(path);
                 Canvas canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(640, 480, ColorDepth.ColorDepth32));
                 
+                // Calculate center position for the image
+                int x = (canvas.Mode.Columns - (int)bmp.Width) / 2;
+                int y = (canvas.Mode.Rows - (int)bmp.Height) / 2;
+                
+                // Ensure the position is not negative (in case image is larger than canvas)
+                x = Math.Max(0, x);
+                y = Math.Max(0, y);
+                
                 canvas.Clear(Color.Black);
-                canvas.DrawImage(bmp, 0, 0);
+                canvas.DrawImage(bmp, x, y);
                 canvas.Display();
                 
                 if (displayTimeMs > 0)
