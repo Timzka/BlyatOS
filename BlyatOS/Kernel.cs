@@ -11,6 +11,11 @@ using BlyatOS.Library.BlyatFileSystem;
 using Cosmos.System.ExtendedASCII;
 using System.Text;
 using static BlyatOS.PathHelpers;
+using static BlyatOS.Library.Configs.UsersConfig;
+using Cosmos.System.FileSystem.VFS;
+using Cosmos.System.Graphics;
+using System.Drawing;
+using BlyatOS.Library.Helpers;
 
 namespace BlyatOS;
 
@@ -34,13 +39,10 @@ public class Kernel : Sys.Kernel
         Encoding.RegisterProvider(CosmosEncodingProvider.Instance); //diese 3 zeilen sind für die codepage 437 (box drawing chars), so könnte man theoretisch eine
         Console.InputEncoding = Encoding.GetEncoding(437); //funktion bauen, die UTF8 unterstützt
         Console.OutputEncoding = Encoding.GetEncoding(437);
-
         OnStartUp.RunLoadingScreenThing();
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
-
         Sys.KeyboardManager.SetKeyLayout(new DE_Standard());
-        
         Console.WriteLine($"BlyatOS v{VersionInfo} booted successfully. Type help for a list of valid commands");
         MomentOfStart = DateTime.Now;
 
@@ -108,6 +110,14 @@ public class Kernel : Sys.Kernel
                     case "blyatgames":
                         {
                             BlyatgamesApp.Run(Rand);
+                            break;
+                        }
+                    case "loadkusche":
+                        {
+
+                            byte[] data = File.ReadAllBytes(@"0:\kusche256.raw");
+
+                            Console.WriteLine("Dateigröße: " + data.Length + " Bytes");
                             break;
                         }
                     case "lock":
@@ -197,7 +207,7 @@ public class Kernel : Sys.Kernel
                                 break;
                             }
                             var name = args[1];
-                            var path = PathCombine(CurrentDirectory, name);
+                            var path = CurrentDirectory + name;//PathCombine(CurrentDirectory, name);
                             fs.CreateFile(path);
                             Console.WriteLine($"File '{name}' created at '{path}'");
                             break;
@@ -261,112 +271,68 @@ public class Kernel : Sys.Kernel
                             break;
                         }
 
+
                     case "pwd":
                         Console.WriteLine(CurrentDirectory);
                         break;
 
-                    case "loadiso":
-                        {
-                            Console.WriteLine("=== Testing direct ISO access ===");
-                            try
-                            {
-                                // Versuche kusche256.raw direkt von der ISO zu laden
-                                var data = BlyatOS.Library.Helpers.ISO9660Reader.LoadFileFromISO("kusche256.raw");
-                                
-                                if (data != null && data.Length > 0)
-                                {
-                                    Console.ForegroundColor = ConsoleColor.Green;
-                                    Console.WriteLine($"SUCCESS! Loaded {data.Length} bytes from ISO!");
-                                    Console.ResetColor();
-                                    
-                                    // Optinal: Schreibe ins VFS
-                                    Console.WriteLine("Schreibe nach 0:\\kusche256.raw...");
-                                    File.WriteAllBytes(@"0:\kusche256.raw", data);
-                                    Console.WriteLine("Fertig! Datei ist jetzt im VFS verfügbar.");
-                                }
-                                else
-                                {
-                                    Console.ForegroundColor = ConsoleColor.Red;
-                                    Console.WriteLine("FAILED: Could not load file from ISO");
-                                    Console.ResetColor();
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error: {ex.Message}");
-                            }
-                            break;
-                        }
-
-                    case "mountcd":
-                        {
-                            Console.WriteLine("Attempting to mount CD-ROM...");
-                            try
-                            {
-                                var disks = fs.Disks;
-                                foreach (var disk in disks)
-                                {
-                                    if (disk?.Host == null) continue;
-                                    
-                                    if (disk.Host.Type == Cosmos.HAL.BlockDevice.BlockDeviceType.RemovableCD)
-                                    {
-                                        Console.WriteLine("Found CD-ROM drive, mounting...");
-                                        disk.Mount();
-                                        Console.WriteLine("Mount attempted. Run 'findkusche' to check.");
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error: {ex.Message}");
-                            }
-                            break;
-                        }
-
                     case "findkusche":
                         {
-                            Console.WriteLine("=== Searching for kusche256.raw ===");
+                            Console.WriteLine($"=== Searching for  {args[1]}===");
                             Console.WriteLine();
-                            
-                            // Zeige alle verfügbaren Laufwerke
-                            Console.WriteLine("Available drives:");
+
                             var disks = fs.Disks;
                             foreach (var disk in disks)
                             {
                                 if (disk?.Host == null) continue;
                                 
-                                Console.WriteLine($"  Type: {fsh.BlockDeviceTypeToString(disk.Host.Type)}");
+                                Console.WriteLine($"Disk Type: {fsh.BlockDeviceTypeToString(disk.Host.Type)}");
+
                                 foreach (var partition in disk.Partitions)
                                 {
-                                    Console.WriteLine($"    Drive: {partition.RootPath}");
-                                    
-                                    // Prüfe auf kusche256.raw in diesem Laufwerk
-                                    try
-                                    {
-                                        string[] searchPaths = new[] { "", "isoFiles\\" };
-                                        foreach (var subPath in searchPaths)
-                                        {
-                                            string testPath = Path.Combine(partition.RootPath, subPath, "kusche256.raw");
-                                            if (File.Exists(testPath))
-                                            {
-                                                FileInfo fi = new FileInfo(testPath);
-                                                Console.ForegroundColor = ConsoleColor.Green;
-                                                Console.WriteLine($"      FOUND: {testPath} ({fi.Length} bytes)");
-                                                Console.ResetColor();
-                                            }
-                                            else
-                                            {
-                                                Console.ForegroundColor = ConsoleColor.Red;
-                                                Console.WriteLine(" Not found in: " + Path.Combine(partition.RootPath, subPath));
-                                                Console.ResetColor();
-                                            }
-                                        }
-                                    }
-                                    catch { }
+                                    Console.WriteLine($"  Checking: {partition.RootPath}");
+                                    SearchFileRecursive(partition.RootPath, args[1]);
                                 }
                             }
+
                             Console.WriteLine();
+                            break;
+                        }
+                    case "readfile":
+                        {
+                            if (args.Length < 2)
+                            {
+                                Console.WriteLine("Usage: readfile <path>");
+                                break;
+                            }
+
+                            string path = IsAbsolute(args[1])
+                                ? args[1]
+                                : PathCombine(CurrentDirectory, args[1]).TrimEnd('\\');
+
+                            if (!File.Exists(path))
+                            {
+                                Console.WriteLine($"File not found: {path}");
+                                break;
+                            }
+
+                            if (path.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                            {
+                                ReadDisplay.DisplayBitmap(path);
+                            }
+                            else
+                            {
+                                // For small files, read all at once
+                                if (new FileInfo(path).Length < 1024 * 1024) // 1MB
+                                {
+                                    Console.WriteLine(ReadDisplay.ReadTextFile(path));
+                                }
+                                else
+                                {
+                                    // For larger files, read in chunks
+                                    ReadDisplay.ReadTextFileInChunks(path);
+                                }
+                            }
                             break;
                         }
 
@@ -407,5 +373,4 @@ public class Kernel : Sys.Kernel
             Console.WriteLine("An error occured: " + ex.Message);
         }
     }
-
 }

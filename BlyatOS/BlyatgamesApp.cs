@@ -2,6 +2,7 @@ using BadTetrisCS;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Helpers;
 using Cosmos.HAL;
+using Cosmos.System.FileSystem;
 using Cosmos.System.Graphics;
 using System;
 using System.Drawing;
@@ -16,9 +17,9 @@ public class BlyatgamesApp
         bool exitGames = false;
         Console.Clear();
 
+        Console.WriteLine("You are now in Blyatgames, write \"mainMenu\" to go back or \"help\" for available commands");
         do
         {
-            Console.WriteLine("You are now in Blyatgames, write \"mainMenu\" to go back or \"help\" for available commands");
             Console.Write("Input: ");
 
             var userInput = Console.ReadLine();
@@ -47,15 +48,14 @@ public class BlyatgamesApp
                         Console.Clear();
                         break;
                     }
-                case "OOGA": 
+                case "OOGA":
                     {
 
                         Console.Clear();
                         Canvas canvas;
                         canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(640, 480, ColorDepth.ColorDepth32));
-                        canvas.Clear(Color.Black); 
-                        Console.ReadKey();
-                        Bitmap kusche = RawToBitMap.LoadRawImageAutoDetect(@"0:\kusche256.raw");
+                        canvas.Clear(Color.Black);
+                        Bitmap kusche = ImageHelpers.LoadBMP(@"0:\kusche128.bmp");
                         while (true)
                         {
                             if (Cosmos.System.KeyboardManager.TryReadKey(out var keyInfo))
@@ -79,6 +79,21 @@ public class BlyatgamesApp
                         if (arr.Length > 1 && int.TryParse(arr[1], out int numImages))
                         {
                             numberOfImages = Math.Max(1, Math.Min(numImages, 10)); // Max 10 Bilder
+                        }
+                        string path = "";
+                        if(arr.Length > 2)
+                        {
+                            path = arr[2];
+                        }
+
+                        Bitmap bitmap;
+                        if(path != "" && File.Exists(path))
+                        {
+                            bitmap = ImageHelpers.LoadBMP(path);
+                        }
+                        else
+                        {
+                            bitmap = BitMaps.Bitmaps["barie"];
                         }
 
                         Console.Clear();
@@ -123,7 +138,7 @@ public class BlyatgamesApp
                             // Alle Bilder zeichnen
                             for (int i = 0; i < numberOfImages; i++)
                             {
-                                canvas.DrawImage(BitMaps.Bitmaps["barie"], imageX[i], imageY[i]);
+                                canvas.DrawImage(bitmap, imageX[i], imageY[i]);
                             }
                             canvas.Display();
 

@@ -17,8 +17,14 @@
         <Profile>VMware</Profile>
         <Description>Use VMware Player or Workstation to deploy and debug.</Description>
         <PxeInterface>192.168.0.8</PxeInterface>
-        <DebugEnabled>True</DebugEnabled>
+        <DebugEnabled>False</DebugEnabled>
+        <OptimizationLevel>1</OptimizationLevel>
     </PropertyGroup>
+
+    <ItemGroup>
+      <None Remove="isoFiles\Einleitung.txt" />
+      <None Remove="isoFiles\kusche256.raw" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Cosmos.Build" Version="0-*" NoWarn="NU1604" />
@@ -27,10 +33,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="isoFiles\kusche256.raw">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        <Link>kusche256.raw</Link>
-      </None>
+      <Resource Include="isoFiles\Einleitung.txt" />
+      <Resource Include="isoFiles\kusche256.raw" />
     </ItemGroup>
 
 </Project>
