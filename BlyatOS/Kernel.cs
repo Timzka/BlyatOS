@@ -380,6 +380,143 @@ public class Kernel : Sys.Kernel
                                 }
                                 break;
                             }
+                        case "write":
+                        {
+                            if (commandArgs.Count < 3)
+                                throw new GenericException("Usage: write <mode> <filename> <content>");
+
+                            string modeToken = commandArgs[0].ToLower();
+                            string filename = commandArgs[1];
+                            string content = string.Join(" ", commandArgs.Skip(2));
+                            if (content[0] == '"' && content[^1] == '"')
+                            {
+                                content = content[1..^1];
+                            }
+                            else if(content.Contains(" "))
+                            {
+                                throw new GenericException("Usage: write <mode> <filename> <content>");
+                            } 
+                            string mode = modeToken switch
+                            {
+                                "append" => "append",
+                                "add" => "append",
+                                "overwrite" => "overwrite",
+                                "ovr" => "overwrite",
+                                _ => throw new GenericException($"Unknown write mode '{modeToken}'. Use append|add or overwrite|ovr.")
+                            };
+
+                            // Build absolute path (avoid trailing slash)
+                            string path = IsAbsolute(filename) ? filename : PathCombine(CurrentDirectory, filename);
+                            if (path.EndsWith("\\") || path.EndsWith("/"))
+                                path = path.TrimEnd('\\','/');
+
+                            try
+                            {
+                                // Ensure file exists
+                                if (!VFSManager.FileExists(path))
+                                {
+                                    VFSManager.CreateFile(path);
+                                }
+
+                                var vfsFile = VFSManager.GetFile(path);
+                                var stream = vfsFile.GetFileStream();
+
+                                if (!stream.CanWrite)
+                                    throw new GenericException($"Stream not writable for '{path}'", "write", "filesystem");
+
+                                byte[] bytes = Encoding.ASCII.GetBytes(content);
+
+                                if (mode == "overwrite")
+                                {
+                                    // Truncate: recreate simple by setting Position=0 and (if supported) Length=0.
+                                    // If Length set is not implemented, delete & recreate.
+                                    try
+                                    {
+                                        stream.Position = 0;
+                                        // Some Cosmos versions allow setting length:
+                                        if (stream.CanSeek)
+                                        {
+                                            // Attempt truncate by writing zero length (if SetLength exists)
+                                            if (stream.Length > 0)
+                                            {
+                                                // If SetLength not available, fall back to delete-recreate
+                                                bool setLengthWorked = true;
+                                                try { stream.SetLength(0); }
+                                                catch { setLengthWorked = false; }
+                                                if (!setLengthWorked)
+                                                {
+                                                    stream.Close();
+                                                    VFSManager.DeleteFile(path);
+                                                    VFSManager.CreateFile(path);
+                                                    vfsFile = VFSManager.GetFile(path);
+                                                    stream = vfsFile.GetFileStream();
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        stream.Close();
+                                        VFSManager.DeleteFile(path);
+                                        VFSManager.CreateFile(path);
+                                        vfsFile = VFSManager.GetFile(path);
+                                        stream = vfsFile.GetFileStream();
+                                    }
+
+                                    stream.Write(bytes, 0, bytes.Length);
+                                }
+                                else // append
+                                {
+                                    if (stream.CanSeek)
+                                    {
+                                        stream.Seek(0, SeekOrigin.End);
+                                        stream.Write(bytes, 0, bytes.Length);
+                                    }
+                                    else
+                                    {
+                                        // Fallback: read existing, then rewrite whole file
+                                        byte[] existing;
+                                        if (stream.CanRead)
+                                        {
+                                            stream.Position = 0;
+                                            existing = new byte[stream.Length];
+                                            stream.Read(existing, 0, existing.Length);
+                                        }
+                                        else
+                                        {
+                                            existing = Array.Empty<byte>();
+                                        }
+
+                                        byte[] combined = new byte[existing.Length + bytes.Length];
+                                        existing.CopyTo(combined, 0);
+                                        bytes.CopyTo(combined, existing.Length);
+
+                                        stream.Close();
+                                        VFSManager.DeleteFile(path);
+                                        VFSManager.CreateFile(path);
+                                        vfsFile = VFSManager.GetFile(path);
+                                        stream = vfsFile.GetFileStream();
+                                        stream.Write(combined, 0, combined.Length);
+                                    }
+                                }
+
+                                stream.Close();
+
+                                Console.WriteLine(mode == "append"
+                                    ? $"Appended {bytes.Length} bytes to '{filename}'"
+                                    : $"Overwrote '{filename}' with {bytes.Length} bytes");
+                            }
+                            catch (GenericException)
+                            {
+                                throw;
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new GenericException($"Write failed: {ex.Message}", "write", "filesystem");
+                            }
+
+                            break;
+                        }
 
                         default:
                             throw new GenericException($"Unknown command '{command}'! Type \"help\" for help or \"exit\" to return!");
