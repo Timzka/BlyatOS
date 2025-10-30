@@ -4,7 +4,9 @@ using BlyatOS.Library.Functions;
 using BlyatOS.Library.Startupthings;
 using Cosmos.HAL;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Cosmos.System.ScanMaps;
 using Sys = Cosmos.System;
 using BlyatOS.Library.BlyatFileSystem;
@@ -49,7 +51,7 @@ public class Kernel : Sys.Kernel
         Global.PIT.Wait(1000);
     }
 
-    protected override void Run()
+    protected override void Run() // && to chain commands --> if(&&) do the switch again
     {
         try
         {
@@ -63,279 +65,289 @@ public class Kernel : Sys.Kernel
                 var input = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(input))
                     return;
-
                 string[] args = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                switch (args[0])
+                
+                // Process commands, handling && chaining
+                for (int i = 0; i < args.Length; )
                 {
-                    case "help":
-                        {
-                            int? page = null;
-                            if (args.Length > 1 && int.TryParse(args[1], out int p)) page = p;
-                            Console.Clear();
-                            BasicFunctions.Help(page, BasicFunctions.ListType.Main);
-                            break;
-                        }
-                    case "version":
-                        {
-                            Console.WriteLine("Blyat version " + VersionInfo);
-                            break;
-                        }
-                    case "echo":
-                        {
-                            BasicFunctions.EchoFunction(args);
-                            break;
-                        }
-                    case "runtime":
-                        {
-                            Console.WriteLine(BasicFunctions.RunTime(MomentOfStart));
-                            break;
-                        }
-                    case "reboot":
-                        {
-                            Console.WriteLine("rebooting");
-                            Global.PIT.Wait(1000);
-                            Cosmos.System.Power.Reboot();
-                            break;
-                        }
-                    case "clearScreen":
-                    case "cls":
-                    case "clear":
-                        {
-                            Console.Clear();
-                            break;
-                        }
-                    case "userManagement":
-                        {
-                            UserManagementApp.Run(CurrentUser, UsersConf);
-                            break;
-                        }
-                    case "blyatgames":
-                        {
-                            BlyatgamesApp.Run(Rand);
-                            break;
-                        }
-                    case "lock":
-                        {
-                            Console.WriteLine("Logging out...");
-                            Global.PIT.Wait(1000);
-                            Logged_In = false;
-                            break;
-                        }
-                    case "exit":
-                        {
-                            Console.WriteLine("exitting");
-                            Global.PIT.Wait(1000);
-                            Cosmos.System.Power.Shutdown();
-                            break;
-                        }
-                    case "fsinfo":
-                        {
-                            var disks = fs.Disks;
-                            foreach (var disk in disks)
+                    // Skip any leading &&
+                    while (i < args.Length && args[i] == "&&") i++;
+                    if (i >= args.Length) break;
+                    
+                    // Get the command
+                    string command = args[i++];
+                    
+                    // Collect arguments until next && or end of input
+                    var commandArgs = new List<string>();
+                    while (i < args.Length && args[i] != "&&")
+                    {
+                        commandArgs.Add(args[i++]);
+                    }
+                    
+                    // Process the command with its arguments
+                    switch (command)
+                    {
+                        case "help":
                             {
-                                if (disk?.Host == null)
+                                int? page = null;
+                                if (commandArgs.Count > 0 && int.TryParse(commandArgs[0], out int p)) page = p;
+                                Console.Clear();
+                                BasicFunctions.Help(page, BasicFunctions.ListType.Main);
+                                break;
+                            }
+                        case "version":
+                            {
+                                Console.WriteLine("Blyat version " + VersionInfo);
+                                break;
+                            }
+                        case "echo":
+                            {
+                                BasicFunctions.EchoFunction(commandArgs.ToArray());
+                                break;
+                            }
+                        case "runtime":
+                            {
+                                Console.WriteLine(BasicFunctions.RunTime(MomentOfStart));
+                                break;
+                            }
+                        case "reboot":
+                            {
+                                Console.WriteLine("rebooting");
+                                Global.PIT.Wait(1000);
+                                Cosmos.System.Power.Reboot();
+                                break;
+                            }
+                        case "clearScreen":
+                        case "cls":
+                        case "clear":
+                            {
+                                Console.Clear();
+                                break;
+                            }
+                        case "userManagement":
+                            {
+                                UserManagementApp.Run(CurrentUser, UsersConf);
+                                break;
+                            }
+                        case "blyatgames":
+                            {
+                                BlyatgamesApp.Run(Rand);
+                                break;
+                            }
+                        case "lock":
+                            {
+                                Console.WriteLine("Logging out...");
+                                Global.PIT.Wait(1000);
+                                Logged_In = false;
+                                break;
+                            }
+                        case "exit":
+                            {
+                                Console.WriteLine("exitting");
+                                Global.PIT.Wait(1000);
+                                Cosmos.System.Power.Shutdown();
+                                break;
+                            }
+                        case "fsinfo":
+                            {
+                                var disks = fs.Disks;
+                                foreach (var disk in disks)
                                 {
-                                    Console.WriteLine("Disk host unavailable");
-                                    continue;
+                                    if (disk?.Host == null)
+                                    {
+                                        Console.WriteLine("Disk host unavailable");
+                                        continue;
+                                    }
+
+                                    Console.WriteLine(fsh.BlockDeviceTypeToString(disk.Host.Type));
+
+                                    foreach (var partition in disk.Partitions)
+                                    {
+                                        Console.WriteLine(partition.Host);
+                                        Console.WriteLine(partition.RootPath);
+                                        Console.WriteLine(partition.MountedFS.Size);
+                                    }
                                 }
+                                break;
+                            }
 
-                                Console.WriteLine(fsh.BlockDeviceTypeToString(disk.Host.Type));
-
-                                foreach (var partition in disk.Partitions)
+                        case "dir":
+                            {
+                                foreach (var d in dirs)
                                 {
-                                    Console.WriteLine(partition.Host);
-                                    Console.WriteLine(partition.RootPath);
-                                    Console.WriteLine(partition.MountedFS.Size);
+                                    Console.WriteLine(TrimPath(d) + "/");
                                 }
-                            }
-                            break;
-                        }
-
-                    case "dir":
-                        {
-                            foreach (var d in dirs)
-                            {
-                                Console.WriteLine(TrimPath(d) + "/");
-                            }
-                            break;
-                        }
-
-                    case "ls":
-                        {
-                            const string dirMarker = "[D]";
-                            const string fileMarker = "[F]";
-                            foreach (var d in dirs)
-                            {
-                                Console.ForegroundColor = ConsoleColor.Cyan;
-                                Console.WriteLine($"{dirMarker} {TrimPath(d)}/");
-                            }
-                            foreach (var f in files)
-                            {
-                                Console.ForegroundColor = ConsoleColor.Gray;
-                                Console.WriteLine($"{fileMarker} {TrimPath(f)}");
-                            }
-                            Console.ResetColor();
-                            break;
-                        }
-
-                    case "mkdir":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: mkdir <name>");
                                 break;
                             }
-                            var name = args[1];
-                            var path = PathCombine(CurrentDirectory, name);
-                            fs.CreateDirectory(path);
-                            Console.WriteLine($"Directory '{name}' created at '{path}'");
-                            break;
-                        }
 
-                    case "touch":
-                        {
-                            if (args.Length < 2)
+                        case "ls":
                             {
-                                Console.WriteLine("Usage: touch <name>");
-                                break;
-                            }
-                            var name = args[1];
-                            
-                            if (!name.Contains('.'))
-                            {
-                                name += ".blyat";
-                            }
-                            if (name.EndsWith("."))
-                            {
-                                name += "blyat";
-                            }
-                            var path = CurrentDirectory + name;//PathCombine(CurrentDirectory, name);
-                            if (File.Exists(path))
-                            {
-                                Console.WriteLine($"File '{name}' already exists at '{path}'");
-                                break;
-                            }
-                            fs.CreateFile(path);
-                            Console.WriteLine($"File '{name}' created at '{path}'");
-                            break;
-                        }
-                    case "cd":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: cd <directory>|..");
-                                break;
-                            }
-                            var target = args[1];
-                            if (target == "..")
-                            {
-                                if (IsRoot(CurrentDirectory, RootPath))
+                                const string dirMarker = "[D]";
+                                const string fileMarker = "[F]";
+                                foreach (var d in dirs)
                                 {
-                                    Console.WriteLine("Already at root");
-                                    break;
+                                    Console.ForegroundColor = ConsoleColor.Cyan;
+                                    Console.WriteLine($"{dirMarker} {TrimPath(d)}/");
                                 }
-                                CurrentDirectory = GetParent(CurrentDirectory, RootPath);
-                                Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
+                                foreach (var f in files)
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Gray;
+                                    Console.WriteLine($"{fileMarker} {TrimPath(f)}");
+                                }
+                                Console.ResetColor();
                                 break;
                             }
 
-                            string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(CurrentDirectory, target);
-                            if (!fsh.DirectoryExists(newPath))
+                        case "mkdir":
                             {
-                                Console.WriteLine($"Directory not found: {newPath}");
+                                if (commandArgs.Count == 0)
+                                {
+                                    throw new GenericException("Usage: mkdir <name>");
+                                }
+                                var name = commandArgs[0];
+                                var path = PathCombine(CurrentDirectory, name);
+                                fs.CreateDirectory(path);
+                                Console.WriteLine($"Directory '{name}' created at '{path}'");
                                 break;
                             }
-                            CurrentDirectory = EnsureTrailingSlash(newPath);
-                            Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
-                            break;
-                        }
-                    case "delfile":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: delfile <filename>");
-                                break;
-                            }
-                            
-                            var name = args[1];
-                            var path = IsAbsolute(name) ? name : PathCombine(CurrentDirectory, name);
-                            if (!File.Exists(path))
-                            {
-                                Console.WriteLine($"File not found: {path}");
-                                break;
-                            }
-                            File.Delete(path);
-                            Console.WriteLine($"File '{name}' deleted from '{path}'");
-                            break;
-                        }
-                    case "pwd":
-                        Console.WriteLine(CurrentDirectory);
-                        break;
 
-                    case "findkusche":
-                        {
-                            Console.WriteLine($"=== Searching for  {args[1]}===");
-                            Console.WriteLine();
-
-                            var disks = fs.Disks;
-                            foreach (var disk in disks)
+                        case "touch":
                             {
-                                if (disk?.Host == null) continue;
+                                if (commandArgs.Count == 0)
+                                {
+                                    throw new GenericException("Usage: touch <name>");
+                                }
+                                var name = commandArgs[0];
+
+                                if (!name.Contains('.'))
+                                {
+                                    name += ".blyat";
+                                }
+                                if (name.EndsWith("."))
+                                {
+                                    name += "blyat";
+                                }
+                                var path = CurrentDirectory + name;//PathCombine(CurrentDirectory, name);
+                                if (File.Exists(path))
+                                {
+                                    throw new GenericException($"File '{name}' already exists at '{path}'");
+                                }
+                                fs.CreateFile(path);
+                                Console.WriteLine($"File '{name}' created at '{path}'");
+                                break;
+                            }
+                        case "cd":
+                            {
+                                if (commandArgs.Count == 0)
+                                {
+                                    throw new GenericException("Usage: cd <directory>|..");
+                                }
+                                var target = commandArgs[0];
                                 
-                                Console.WriteLine($"Disk Type: {fsh.BlockDeviceTypeToString(disk.Host.Type)}");
-
-                                foreach (var partition in disk.Partitions)
+                                if (target == "..")
                                 {
-                                    Console.WriteLine($"  Checking: {partition.RootPath}");
-                                    SearchFileRecursive(partition.RootPath, args[1]);
-                                }
-                            }
-
-                            Console.WriteLine();
-                            break;
-                        }
-                    case "cat":
-                    case "readfile":
-                        {
-                            if (args.Length < 2)
-                            {
-                                Console.WriteLine("Usage: readfile <path>");
-                                break;
-                            }
-
-                            string path = IsAbsolute(args[1])
-                                ? args[1]
-                                : PathCombine(CurrentDirectory, args[1]).TrimEnd('\\');
-
-                            if (!File.Exists(path))
-                            {
-                                Console.WriteLine($"File not found: {path}");
-                                break;
-                            }
-
-                            if (path.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
-                            {
-                                ReadDisplay.DisplayBitmap(path);
-                            }
-                            else
-                            {
-                                // For small files, read all at once
-                                if (new FileInfo(path).Length < 1024 * 1024) // 1MB
-                                {
-                                    Console.WriteLine(ReadDisplay.ReadTextFile(path));
+                                    if (IsRoot(CurrentDirectory, RootPath))
+                                    {
+                                        throw new GenericException("Already at root");
+                                    }
+                                    CurrentDirectory = GetParent(CurrentDirectory, RootPath);
+                                    Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
                                 }
                                 else
                                 {
-                                    // For larger files, read in chunks
-                                    ReadDisplay.ReadTextFileInChunks(path);
+                                    string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(CurrentDirectory, target);
+                                    if (!fsh.DirectoryExists(newPath))
+                                    {
+                                        throw new GenericException($"Directory not found: {newPath}");
+                                    }
+                                    CurrentDirectory = EnsureTrailingSlash(newPath);
+                                    Console.WriteLine($"Changed directory to '{CurrentDirectory}'");
                                 }
+                                break;
                             }
-                            break;
-                        }
+                        case "delfile":
+                            {
+                                if (commandArgs.Count == 0)
+                                {
+                                    throw new GenericException("Usage: delfile <filename>");
+                                }
 
-                    default:
-                        Console.WriteLine("Unknown command! Type \"help\" for help or \"exit\" to return!");
-                        break;
+                                var name = commandArgs[0];
+                                var path = IsAbsolute(name) ? name : PathCombine(CurrentDirectory, name);
+                                if (!File.Exists(path))
+                                {
+                                    throw new GenericException($"File not found: {path}");
+                                }
+                                File.Delete(path);
+                                Console.WriteLine($"File '{name}' deleted from '{path}'");
+                                break;
+                            }
+                        case "pwd":
+                            Console.WriteLine(CurrentDirectory);
+                            break;
+
+                        case "findkusche":
+                            {
+                                Console.WriteLine($"=== Searching for  {args[1]}===");
+                                Console.WriteLine();
+
+                                var disks = fs.Disks;
+                                foreach (var disk in disks)
+                                {
+                                    if (disk?.Host == null) continue;
+
+                                    Console.WriteLine($"Disk Type: {fsh.BlockDeviceTypeToString(disk.Host.Type)}");
+
+                                    foreach (var partition in disk.Partitions)
+                                    {
+                                        Console.WriteLine($"  Checking: {partition.RootPath}");
+                                        SearchFileRecursive(partition.RootPath, args[1]);
+                                    }
+                                }
+
+                                Console.WriteLine();
+                                break;
+                            }
+                        case "cat":
+                        case "readfile":
+                            {
+                                if (commandArgs.Count == 0)
+                                {
+                                    throw new GenericException("Usage: readfile <path>");
+                                }
+
+                                string path = IsAbsolute(commandArgs[0])
+                                    ? commandArgs[0]
+                                    : PathCombine(CurrentDirectory, commandArgs[0]).TrimEnd('\\');
+
+                                if (!File.Exists(path))
+                                {
+                                    throw new GenericException($"File not found: {path}");
+                                }
+
+                                if (path.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    ReadDisplay.DisplayBitmap(path);
+                                }
+                                else
+                                {
+                                    // For small files, read all at once
+                                    if (new FileInfo(path).Length < 1024 * 1024) // 1MB
+                                    {
+                                        Console.WriteLine(ReadDisplay.ReadTextFile(path));
+                                    }
+                                    else
+                                    {
+                                        // For larger files, read in chunks
+                                        ReadDisplay.ReadTextFileInChunks(path);
+                                    }
+                                }
+                                break;
+                            }
+
+                        default:
+                            throw new GenericException($"Unknown command '{command}'! Type \"help\" for help or \"exit\" to return!");
+                    }
                 }
             }
             else
