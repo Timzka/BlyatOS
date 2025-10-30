@@ -34,7 +34,7 @@ public class Kernel : Sys.Kernel
     FileSystemHelpers fsh = new FileSystemHelpers();
 
     public const string RootPath = @"0:\";
-    public const string SYSTEMPATH = RootPath + @"BlyatOS\"; //path where system files are stored, inaccessable to ALL users via normal commands
+    public const string SYSTEMPATH = RootPath + @"BlyatOS"; //path where system files are stored, inaccessable to ALL users via normal commands
     private string CurrentDirectory = RootPath;
 
     private bool LOCKED; //if system isnt complete, lock system, make user run an INIT command
@@ -66,12 +66,12 @@ public class Kernel : Sys.Kernel
             {
                 Console.WriteLine("Locked, there are system files missing!");
                 Console.WriteLine("running initsystem to initialize the files");
-                if (InitSystem.InitSystemData(SYSTEMPATH, fs))
-                {
-                    Console.WriteLine("System initialized. Press any key to reboot");
-                    Console.ReadKey();
-                    Cosmos.System.Power.Reboot();
-                }
+                //if (InitSystem.InitSystemData(SYSTEMPATH, fs))
+                //{
+                //    Console.WriteLine("System initialized. Press any key to reboot");
+                //    Console.ReadKey();
+                //    Cosmos.System.Power.Reboot();
+                //}
                 LOCKED = false;
             }
             // Verzeichnislisten immer aktuell holen
@@ -114,8 +114,17 @@ public class Kernel : Sys.Kernel
                                 BasicFunctions.Help(page, BasicFunctions.ListType.Main);
                                 break;
                             }
+                        case "rmsys":
+                            {
+                                string path = @"0:\lol";
+                                var e = fs.GetDirectory(path);
+                                fs.DeleteDirectory(e);
+                                break;
+                            }
                         case "initsystem":
                             {
+                                //does not work currently
+                                throw new Exception();
                                 if (InitSystem.InitSystemData(SYSTEMPATH, fs))
                                 {
                                     Console.WriteLine("System initialized. Press any key to reboot");
@@ -236,7 +245,7 @@ public class Kernel : Sys.Kernel
                                 }
                                 var name = commandArgs[0];
                                 var path = PathCombine(CurrentDirectory, name);
-                                fs.CreateDirectory(path);
+                                Directory.CreateDirectory(path);
                                 Console.WriteLine($"Directory '{name}' created at '{path}'");
                                 break;
                             }
