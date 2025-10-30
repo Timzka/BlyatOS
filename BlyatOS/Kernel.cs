@@ -33,21 +33,28 @@ public class Kernel : Sys.Kernel
     Sys.FileSystem.CosmosVFS fs;
     FileSystemHelpers fsh = new FileSystemHelpers();
 
-    private const string RootPath = @"0:\";
-    private string CurrentDirectory = RootPath; 
+    public const string RootPath = @"0:\";
+    public const string SYSTEMPATH = RootPath + @"BlyatOS\"; //path where system files are stored, inaccessable to ALL users via normal commands
+    private string CurrentDirectory = RootPath;
+
+    private bool LOCKED; //if system isnt complete, lock system, make user run an INIT command
 
     protected override void BeforeRun()
     {
         Encoding.RegisterProvider(CosmosEncodingProvider.Instance); //diese 3 zeilen sind für die codepage 437 (box drawing chars), so könnte man theoretisch eine
         Console.InputEncoding = Encoding.GetEncoding(437); //funktion bauen, die UTF8 unterstützt
         Console.OutputEncoding = Encoding.GetEncoding(437);
+
         OnStartUp.RunLoadingScreenThing();
+
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
+        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
+
         Sys.KeyboardManager.SetKeyLayout(new DE_Standard());
+
         Console.WriteLine($"BlyatOS v{VersionInfo} booted successfully. Type help for a list of valid commands");
         MomentOfStart = DateTime.Now;
-
         Global.PIT.Wait(1000);
     }
 
@@ -55,6 +62,18 @@ public class Kernel : Sys.Kernel
     {
         try
         {
+            if(LOCKED)
+            {
+                Console.WriteLine("Locked, there are system files missing!");
+                Console.WriteLine("running initsystem to initialize the files");
+                if (InitSystem.InitSystemData(SYSTEMPATH, fs))
+                {
+                    Console.WriteLine("System initialized. Press any key to reboot");
+                    Console.ReadKey();
+                    Cosmos.System.Power.Reboot();
+                }
+                LOCKED = false;
+            }
             // Verzeichnislisten immer aktuell holen
             string[] dirs = fsh.GetDirectories(CurrentDirectory);
             string[] files = fsh.GetFiles(CurrentDirectory);
@@ -95,7 +114,18 @@ public class Kernel : Sys.Kernel
                                 BasicFunctions.Help(page, BasicFunctions.ListType.Main);
                                 break;
                             }
+                        case "initsystem":
+                            {
+                                if (InitSystem.InitSystemData(SYSTEMPATH, fs))
+                                {
+                                    Console.WriteLine("System initialized. Press any key to reboot");
+                                    Console.ReadKey();
+                                    Cosmos.System.Power.Reboot();
+                                }
+                                break;
+                            }
                         case "version":
+                        case "v":
                             {
                                 Console.WriteLine("Blyat version " + VersionInfo);
                                 break;

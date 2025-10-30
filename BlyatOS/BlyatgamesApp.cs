@@ -50,30 +50,35 @@ public class BlyatgamesApp
                     }
                 case "OOGA":
                     {
-                        if(!File.Exists(@"0:\kusche128.bmp"))
+                        string path = "";
+                        if (arr.Length > 1)
                         {
-                            Console.WriteLine("OOGA needs the file \"kusche128.bmp\" in the root of drive 0: to run!");
-                            Console.WriteLine("Press any key to continue...");
-                            Console.ReadKey();
-                            Console.Clear();
-                            break;
+                            path = arr[1];
                         }
                         Console.Clear();
                         Canvas canvas;
                         canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(640, 480, ColorDepth.ColorDepth32));
                         canvas.Clear(Color.Black);
-                        Bitmap kusche = ImageHelpers.LoadBMP(@"0:\kusche128.bmp");
+                        Bitmap bitmap;
+                        if (path != "" && File.Exists(path))
+                        {
+                            bitmap = ImageHelpers.LoadBMP(path);
+                        }
+                        else
+                        {
+                            bitmap = ImageHelpers.LoadBMP(@"0:\Blyatos\blyatlogo.bmp");
+                        }
                         while (true)
                         {
                             if (Cosmos.System.KeyboardManager.TryReadKey(out var keyInfo))
                             {
                                 break;
                             }
-                            canvas.Clear(Color.Black);
-                            canvas.DrawImage(kusche, rand.Next(0, 512), rand.Next(0, 360));
+                            canvas.DrawImage(bitmap, rand.Next(0, 512), rand.Next(0, 360));
                             canvas.Display();
                             Global.PIT.Wait(500);
                         }
+
                         canvas.Disable();
                         //Console.ReadKey();
                         break;
@@ -100,7 +105,7 @@ public class BlyatgamesApp
                         }
                         else
                         {
-                            bitmap = BitMaps.Bitmaps["barie"];
+                            bitmap = ImageHelpers.LoadBMP(@"0:\Blyatos\blyatlogo.bmp");
                         }
 
                         Console.Clear();

@@ -15,7 +15,7 @@ namespace BlyatOS.Library.Helpers
         /// </summary>
         /// <param name="path">Path to the bitmap file</param>
         /// <param name="displayTimeMs">Time in milliseconds to display the image (default: 5000ms)</param>
-        public static void DisplayBitmap(string path, int displayTimeMs = 5000)
+        public static void DisplayBitmap(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentNullException(nameof(path));
@@ -40,11 +40,8 @@ namespace BlyatOS.Library.Helpers
                 canvas.DrawImage(bmp, x, y);
                 canvas.Display();
                 
-                if (displayTimeMs > 0)
-                {
-                    Global.PIT.Wait((uint)displayTimeMs);
-                }
-                
+                Console.ReadKey(); // Wait for a key press to continue
+
                 canvas.Disable();
             }
             catch (Exception ex)

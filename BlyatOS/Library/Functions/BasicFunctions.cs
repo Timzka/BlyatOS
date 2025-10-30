@@ -26,14 +26,15 @@ public class BasicFunctions
 
         int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
 
-        Console.WriteLine($"--- Help Page {currentPage}/{totalPages} ({GetListTypeName(listType)}) ---");
+        Console.WriteLine($"--- Help Page {currentPage}/{totalPages} ({GetListTypeName(listType)}) ---"); 
+        Console.WriteLine($"--- | = command alias, <> = optional, [] = mandatory                   ---");
 
         var wantedCommandsPage = commands.Skip((currentPage - 1) * commandsPerPage).Take(commandsPerPage);
 
         if (currentPage == 1)
         {
             Console.WriteLine("---");
-            Console.WriteLine("command: help [page]");
+            Console.WriteLine("command: help <page>");
             Console.WriteLine("description: show help pages (optional page number)");
         }
 
@@ -56,6 +57,7 @@ public class BasicFunctions
                 {
                     new Commands("version | v", "write version number"),
                     new Commands("echo", "echo text"),
+                    new Commands("initsystem", "re-initialize critical system files !they will be reset!"),
                     new Commands("runtime", "show runtime"),
                     new Commands("reboot", "reboot system"),
                     new Commands("clearScreen | clear | cls", "clear the console"),
@@ -82,8 +84,8 @@ public class BasicFunctions
                 {
                     new Commands("tetris", "starts a game of tetris"),
                     new Commands("wiseman", "get a motivational message"),
-                    new Commands("OOGA", "jumpscare"),
-                    new Commands("screensave [number]", "animated screensaver with multiple bouncing images (default: 1)"),
+                    new Commands("OOGA <filepath>", "jumpscare"),
+                    new Commands("screensave <number> <filepath>", "animated screensaver with multiple bouncing images (default: 1)"),
                     new Commands("mainMenu | exit", "return to main menu")
                 };
 
