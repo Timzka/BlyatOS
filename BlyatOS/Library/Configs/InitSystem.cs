@@ -9,6 +9,7 @@ using Cosmos.System.FileSystem;
 using Cosmos.System.FileSystem.VFS;
 using Cosmos.System.Graphics;
 using static BlyatOS.Library.Configs.UsersConfig;
+using static Cosmos.HAL.BlockDevice.ATA_PIO;
 
 namespace BlyatOS.Library.Configs;
 
@@ -18,19 +19,19 @@ internal class InitSystem
     {
         try
         {
-            if (!Directory.Exists(syspath))
+            if (!VFSManager.DirectoryExists(syspath))
             {
                 return false;
             }
-            if(!File.Exists(Path.Combine(syspath, "usersconfig.nahui")))
+            if(!VFSManager.FileExists(Path.Combine(syspath, "usersconfig.nahui")))
             {
                 return false;
             }
-            if(!File.Exists(Path.Combine(syspath, "systemconfig.nahui")))
+            if(!VFSManager.FileExists(Path.Combine(syspath, "systemconfig.nahui")))
             {
                 return false;
             }
-            if(!File.Exists(Path.Combine(syspath, "blyatlogo.bmp")))
+            if(!VFSManager.FileExists(Path.Combine(syspath, "blyatlogo.bmp")))
             {
                 return false;
             }
@@ -47,29 +48,29 @@ internal class InitSystem
     public static bool InitSystemData(string syspath, CosmosVFS fs)
     {
         
-        try 
-        { 
-            if(!Directory.Exists(syspath))
+        try
+        {
+            if (!VFSManager.DirectoryExists(syspath))
             {
-                Directory.CreateDirectory(syspath);
+                VFSManager.CreateDirectory(syspath);
                 Console.WriteLine("System Verzeichnis erstellt");
             }
 
-            if (!File.Exists(Path.Combine(syspath, "usersconfig.nahui"))) //not finished, doesnt work
+            if (!VFSManager.FileExists(Path.Combine(syspath, "usersconfig.nahui"))) //not finished, doesnt work
             {
-                File.Create(Path.Combine(syspath, "usersconfig.nahui")).Close();
+                VFSManager.CreateFile(Path.Combine(syspath, "usersconfig.nahui"));
             }
-            WriteDefaultUsers(fs,Path.Combine(syspath, "usersconfig.nahui"));
+            //WriteDefaultUsers(Path.Combine(syspath, "usersconfig.nahui"));
             Console.WriteLine("usersconfig.nahui erstellt");
 
-            if (!File.Exists(Path.Combine(syspath, "systemconfig.nahui"))) //not finished
+            if (!VFSManager.FileExists(Path.Combine(syspath, "systemconfig.nahui"))) //not finished
             {
-                File.Create(Path.Combine(syspath, "systemconfig.nahui")).Close();
+                VFSManager.CreateFile(Path.Combine(syspath, "systemconfig.nahui"));
             }
-            File.WriteAllText(Path.Combine(syspath, "systemconfig.nahui"), "");
+            //File.WriteAllText(Path.Combine(syspath, "systemconfig.nahui"), "");
             Console.WriteLine("systemconfig.nahui erstellt");
 
-            if (!File.Exists(Path.Combine(syspath, "blyatlogo.bmp")))
+            if (!VFSManager.FileExists(Path.Combine(syspath, "blyatlogo.bmp")))
             {
                 BitMaps.BlyatLogo.Save(Path.Combine(syspath, "blyatlogo.bmp"));
                 Console.WriteLine("blyatlogo.bmp erstellt");
@@ -87,7 +88,7 @@ internal class InitSystem
             return false;
         }
     }
-    public static void WriteDefaultUsers(CosmosVFS fs, string usersPath)
+    public static void WriteDefaultUsers( string usersPath)
     {
         var defaultUsers = new List<User>
     {
@@ -104,21 +105,22 @@ internal class InitSystem
 
         try
         {
-            if(!File.Exists(usersPath))
-            {
-                throw new Exception(usersPath + " existiert nicht!");
-            }
-            var entry = VFSManager.GetFile(usersPath);// DirectoryEntry
-            var stream = entry.GetFileStream();
-            byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
 
-            stream.Write(bytes, 0, bytes.Length);
-            stream.Close(); // sehr wichtig in Cosmos
-            Console.WriteLine("Standard-Users erfolgreich geschrieben (Base64-Passwörter).");
+            var helloFile = VFSManager.GetFile(usersPath);
+            var helloFileStream = helloFile.GetFileStream();
+
+            if (helloFileStream.CanWrite)
+            {
+                byte[] textToWrite = Encoding.ASCII.GetBytes(sb.ToString());
+                helloFileStream.Write(textToWrite, 0, textToWrite.Length);
+            }
+            else
+            {
+                throw new Exception("Cannot write to " + usersPath);
+            }
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
-            Console.WriteLine("Fehler beim Schreiben der Users-Datei:");
             Console.WriteLine(ex.ToString());
         }
     }

@@ -34,7 +34,7 @@ public class Kernel : Sys.Kernel
     FileSystemHelpers fsh = new FileSystemHelpers();
 
     public const string RootPath = @"0:\";
-    public const string SYSTEMPATH = RootPath + @"BlyatOS"; //path where system files are stored, inaccessable to ALL users via normal commands
+    public const string SYSTEMPATH = RootPath + @"BlyatOS\"; //path where system files are stored, inaccessable to ALL users via normal commands
     private string CurrentDirectory = RootPath;
 
     private bool LOCKED; //if system isnt complete, lock system, make user run an INIT command
@@ -116,15 +116,12 @@ public class Kernel : Sys.Kernel
                             }
                         case "rmsys":
                             {
-                                string path = @"0:\lol";
-                                var e = fs.GetDirectory(path);
-                                fs.DeleteDirectory(e);
+                                string path = @"0:\BlyatOS";
+                                VFSManager.DeleteDirectory(path, true);
                                 break;
                             }
                         case "initsystem":
                             {
-                                //does not work currently
-                                throw new Exception();
                                 if (InitSystem.InitSystemData(SYSTEMPATH, fs))
                                 {
                                     Console.WriteLine("System initialized. Press any key to reboot");
