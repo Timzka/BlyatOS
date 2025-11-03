@@ -76,6 +76,7 @@ public class BasicFunctions
                     new Commands("touch [filename]", "create a new file with [name], if no ending is given, it will automatically assume .blyat"),
                     new Commands("delfile [filename]", "delete a file with [filename] in currentpath, there is no safety at the moment!"),
                     new Commands("readfile | cat [file]", "read a file, if it is an image, display it, else write the text. if root isnt given, go from currentpath"),
+                    new Commands("neofetch", "system overview (logo, user, runtime, disks, etc.)"),
 
                 };
 
