@@ -1,5 +1,6 @@
 using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
+using BlyatOS.Library.Helpers;
 using Cosmos.HAL;
 using System;
 
@@ -10,13 +11,13 @@ public class UserManagementApp
     public static void Run(int currentUser, UsersConfig usersConf)
     {
         bool exitUserManager = false;
-        Console.Clear();
+        ConsoleHelpers.ClearConsole();
         do
         {
-            Console.WriteLine("You are now in UserManagement, write \"mainMenu\" to go back or \"help\" for available commands");
-            Console.Write("Input: ");
+            ConsoleHelpers.WriteLine("You are now in UserManagement, write \"mainMenu\" to go back or \"help\" for available commands");
+            ConsoleHelpers.Write("Input: ");
 
-            var userInput = Console.ReadLine();
+            var userInput = ConsoleHelpers.ReadLine();
 
             if (string.IsNullOrWhiteSpace(userInput))
                 continue;
@@ -29,10 +30,10 @@ public class UserManagementApp
                     {
                         if (!UserManagement.CheckPermissions(currentUser, usersConf, UsersConfig.Permissions.Admin))
                         {
-                            Console.WriteLine("Missing Permissions");
+                            ConsoleHelpers.WriteLine("Missing Permissions");
                             break;
                         }
-                        Console.WriteLine("Nyet, no vodka for you! //not implemented");
+                        ConsoleHelpers.WriteLine("Nyet, no vodka for you! //not implemented");
                         break;
                     }
                 case "createUser":
@@ -40,7 +41,7 @@ public class UserManagementApp
                         Console.Clear();
                         if (!UserManagement.CheckPermissions(currentUser, usersConf, UsersConfig.Permissions.Admin))
                         {
-                            Console.WriteLine("Missing Permissions");
+                            ConsoleHelpers.WriteLine("Missing Permissions");
                             break;
                         }
                         UserManagement.CreateUser(usersConf, currentUser);
@@ -51,7 +52,7 @@ public class UserManagementApp
                         Console.Clear();
                         if (!UserManagement.CheckPermissions(currentUser, usersConf, UsersConfig.Permissions.Admin))
                         {
-                            Console.WriteLine("Missing Permissions");
+                            ConsoleHelpers.WriteLine("Missing Permissions");
                             break;
                         }
                         UserManagement.DeleteUser(usersConf, currentUser);
@@ -71,8 +72,8 @@ public class UserManagementApp
                     }
                 default:
                     {
-                        Console.WriteLine("Unknown command! Type \"help\" for help or \"exit\" to return!");
-                        Console.WriteLine("Press any key to continue...");
+                        ConsoleHelpers.WriteLine("Unknown command! Type \"help\" for help or \"exit\" to return!");
+                        ConsoleHelpers.WriteLine("Press any key to continue...");
                         Console.ReadKey();
                         Console.Clear();
                         break;

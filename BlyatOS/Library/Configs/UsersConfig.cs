@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Cosmos.System.FileSystem;
 using Cosmos.System.FileSystem.VFS;
 using static BlyatOS.Library.Configs.UsersConfig;
+using BlyatOS.Library.Helpers;
 
 namespace BlyatOS.Library.Configs;
 
@@ -47,13 +48,13 @@ public class UsersConfig
         }
 
         File.WriteAllLines(usersPath, lines);
-        Console.WriteLine("Users erfolgreich gespeichert (Passwörter Base64).");
+        ConsoleHelpers.WriteLine("Users erfolgreich gespeichert (Passwörter Base64).");
     }
     public void LoadUsers(string usersPath)
     {
         if (!File.Exists(usersPath))
         {
-            Console.WriteLine("Users-Datei existiert nicht, Standard-Users werden geladen.");
+            ConsoleHelpers.WriteLine("Users-Datei existiert nicht, Standard-Users werden geladen.");
             return;
         }
 
@@ -76,7 +77,7 @@ public class UsersConfig
             Users.Add(new User(username, uid, password, role));
         }
 
-        Console.WriteLine("Users erfolgreich geladen (Passwörter Base64 dekodiert).");
+        ConsoleHelpers.WriteLine("Users erfolgreich geladen (Passwörter Base64 dekodiert).");
     }
 
 

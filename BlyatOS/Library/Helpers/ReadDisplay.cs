@@ -25,28 +25,44 @@ namespace BlyatOS.Library.Helpers
 
             try
             {
+                // Load and prepare the bitmap
                 Bitmap bmp = ImageHelpers.LoadBMP(path);
-                Canvas canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(640, 480, ColorDepth.ColorDepth32));
+                
+                // Get the existing canvas from DisplaySettings
+                var canvas = Configs.DisplaySettings.Canvas;
+                var screenWidth = Configs.DisplaySettings.ScreenWidth;
+                var screenHeight = Configs.DisplaySettings.ScreenHeight;
                 
                 // Calculate center position for the image
-                int x = (canvas.Mode.Columns - (int)bmp.Width) / 2;
-                int y = (canvas.Mode.Rows - (int)bmp.Height) / 2;
+                int x = (screenWidth - (int)bmp.Width) / 2;
+                int y = (screenHeight - (int)bmp.Height) / 2;
                 
                 // Ensure the position is not negative (in case image is larger than canvas)
                 x = Math.Max(0, x);
                 y = Math.Max(0, y);
                 
+                // Clear the screen and draw the image
                 canvas.Clear(Color.Black);
                 canvas.DrawImage(bmp, x, y);
                 canvas.Display();
                 
-                Console.ReadKey(); // Wait for a key press to continue
-
-                canvas.Disable();
+                // Wait for a key press to continue
+                while (!Cosmos.System.KeyboardManager.KeyAvailable)
+                {
+                    // Small delay to prevent high CPU usage
+                    Cosmos.HAL.Global.PIT.Wait(10);
+                }
+                
+                // Clear the key that was pressed
+                Cosmos.System.KeyboardManager.ReadKey();
+                
+                // Clear the screen and restore the console
+                canvas.Clear(Configs.DisplaySettings.BackgroundColor);
+                canvas.Display();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error displaying image: {ex.Message}");
+                ConsoleHelpers.WriteLine($"Error displaying image: {ex.Message}", Color.Red);
                 throw;
             }
         }
@@ -105,7 +121,7 @@ namespace BlyatOS.Library.Helpers
                 }
                 else
                 {
-                    Console.Write(chunk);
+                    ConsoleHelpers.Write(chunk);
                 }
             }
         }

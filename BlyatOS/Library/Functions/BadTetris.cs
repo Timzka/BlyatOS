@@ -233,12 +233,10 @@ public class BadTetris
 
     private void HideCursor()
     {
-        VGACursorFix.HideCursor();
     }
 
     private void ShowCursor()
     {
-        VGACursorFix.ShowCursor();
     }
 
     private void ClearScreen()

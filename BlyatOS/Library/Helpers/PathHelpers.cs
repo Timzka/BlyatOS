@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BlyatOS.Library.Helpers;
 
 namespace BlyatOS;
 
@@ -60,15 +62,11 @@ public class PathHelpers
             if (File.Exists(testFile))
             {
                 FileInfo fi = new FileInfo(testFile);
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"      FOUND: {testFile} ({fi.Length} bytes)");
-                Console.ResetColor();
+                ConsoleHelpers.WriteLine($"      FOUND: {testFile} ({fi.Length} bytes)", Color.Green);
             }
             else
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("      Not found in: " + currentPath);
-                Console.ResetColor();
+                ConsoleHelpers.WriteLine("      Not found in: " + currentPath, Color.Red);
             }
 
             // Traverse directories
@@ -83,9 +81,7 @@ public class PathHelpers
         }
         catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine($"  [WARN] Could not access: {currentPath} ({ex.Message})");
-            Console.ResetColor();
+            ConsoleHelpers.WriteLine($"  [WARN] Could not access: {currentPath} ({ex.Message})", Color.Orange);
         }
     }
 

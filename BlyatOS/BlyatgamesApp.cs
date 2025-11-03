@@ -1,4 +1,5 @@
 using BadTetrisCS;
+using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Helpers;
 using Cosmos.HAL;
@@ -15,14 +16,15 @@ public class BlyatgamesApp
     public static void Run(Random rand)
     {
         bool exitGames = false;
-        Console.Clear();
+        ConsoleHelpers.ClearConsole();
 
-        Console.WriteLine("You are now in Blyatgames, write \"mainMenu\" to go back or \"help\" for available commands");
+        ConsoleHelpers.WriteLine("You are now in Blyatgames, write \"mainMenu\" to go back or \"help\" for available commands");
         do
         {
-            Console.Write("Input: ");
+            ConsoleHelpers.WriteLine();
+            ConsoleHelpers.Write("Input: ");
 
-            var userInput = Console.ReadLine();
+            var userInput = ConsoleHelpers.ReadLine();
 
             if (string.IsNullOrWhiteSpace(userInput))
                 continue;
@@ -33,19 +35,19 @@ public class BlyatgamesApp
             {
                 case "tetris":
                     {
-                        Console.Clear();
+                        ConsoleHelpers.ClearConsole();
                         BadTetris game = new BadTetris();
                         game.Run();
-                        Console.Clear();
+                        ConsoleHelpers.ClearConsole();
                         break;
                     }
                 case "wiseman":
                     {
-                        Console.Clear();
-                        Console.WriteLine(BasicFunctions.GenerateWiseManMessage(rand));
-                        Console.WriteLine("Press any key to continue...");
-                        Console.ReadKey();
-                        Console.Clear();
+                        ConsoleHelpers.ClearConsole();
+                        ConsoleHelpers.WriteLine(BasicFunctions.GenerateWiseManMessage(rand));
+                        ConsoleHelpers.WriteLine("Press any key to continue...");
+                        ConsoleHelpers.ReadKey();
+                        ConsoleHelpers.ClearConsole();
                         break;
                     }
                 case "OOGA":
@@ -55,9 +57,8 @@ public class BlyatgamesApp
                         {
                             path = arr[1];
                         }
-                        Console.Clear();
-                        Canvas canvas;
-                        canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(640, 480, ColorDepth.ColorDepth32));
+                        ConsoleHelpers.ClearConsole();
+                        var canvas = DisplaySettings.Canvas;
                         canvas.Clear(Color.Black);
                         Bitmap bitmap;
                         if (path != "" && File.Exists(path))
@@ -79,7 +80,7 @@ public class BlyatgamesApp
                             Global.PIT.Wait(500);
                         }
 
-                        canvas.Disable();
+                        canvas.Clear(DisplaySettings.BackgroundColor);
                         //Console.ReadKey();
                         break;
                     }
@@ -109,10 +110,9 @@ public class BlyatgamesApp
                         }
 
                         Console.Clear();
-                        Canvas canvas;
-                        int canvasWidth = 640;
-                        int canvasHeight = 480;
-                        canvas = FullScreenCanvas.GetFullScreenCanvas(new Mode(canvasWidth, canvasHeight, ColorDepth.ColorDepth32));
+                        var canvas = DisplaySettings.Canvas;
+                        int canvasWidth = DisplaySettings.ScreenWidth;
+                        int canvasHeight = DisplaySettings.ScreenHeight;
                         canvas.Clear(Color.Black);
 
                         // Arrays für mehrere Bilder initialisieren
@@ -193,12 +193,12 @@ public class BlyatgamesApp
 
                             Global.PIT.Wait(25); // 40 FPS für smooth Animation mit mehreren Bildern
                         }
-                        canvas.Disable();
+                        canvas.Clear(DisplaySettings.BackgroundColor);
                         break;
                     }
                 case "help":
                     {
-                        Console.Clear();
+                        ConsoleHelpers.ClearConsole();
                         BasicFunctions.Help(null, BasicFunctions.ListType.Blyatgames);
                         break;
                     }
@@ -210,10 +210,10 @@ public class BlyatgamesApp
                     }
                 default:
                     {
-                        Console.WriteLine("Unknown command! Type \"help\" for help or \"exit\" to return!");
-                        Console.WriteLine("Press any key to continue...");
-                        Console.ReadKey();
-                        Console.Clear();
+                        ConsoleHelpers.WriteLine("Unknown command! Type \"help\" for help or \"exit\" to return!");
+                        ConsoleHelpers.WriteLine("Press any key to continue...");
+                        ConsoleHelpers.ReadKey();
+                        ConsoleHelpers.ClearConsole();
                         break;
                     }
             }

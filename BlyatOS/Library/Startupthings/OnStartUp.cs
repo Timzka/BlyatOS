@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
+using System.Drawing;
 using Cosmos.HAL;
-using Cosmos.System.Graphics;
+using BlyatOS.Library.Helpers;
+using BlyatOS.Library.Configs;
 
 namespace BlyatOS.Library.Startupthings;
 
 public class OnStartUp
 {
+    static char block = (char)219;
     public static void RunLoadingScreenThing() //unneccessary, but i think it is really cool
     {
         int maxLength = 37;
@@ -24,8 +23,7 @@ public class OnStartUp
         "  ~~      ",
         "  ~       "
         };
-        VGACursorFix.HideCursor();
-        Console.Clear();
+        ConsoleHelpers.ClearConsole();
 
         for (int len = maxLength; len >= 0; len--)
         {
@@ -33,38 +31,35 @@ public class OnStartUp
             uint randTime = (uint)(50 + rand.Next(0, 250)); // in ms
 
             // smoke on top
-            Console.SetCursorPosition(0, 2);
-            Console.Write(new string(' ', smokePos));
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write(smokePatterns[len % smokePatterns.Length]);
-            Console.ResetColor();
+            ConsoleHelpers.SetCursorPosition(0, 2);
+            ConsoleHelpers.Write(new string(' ', smokePos));
+            
+            // Draw smoke pattern with gray color
+            ConsoleHelpers.Write(smokePatterns[len % smokePatterns.Length], Color.Gray);
 
             // draw cigarette filter + case + fire + smoke
-            Console.SetCursorPosition(0, 3);
+            ConsoleHelpers.SetCursorPosition(0, 3);
 
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            for (int i = 0; i < filterLength; i++) Console.Write("█");
+            // Draw filter (dark yellow)
+            ConsoleHelpers.Write(new string(block, filterLength), Color.DarkGoldenrod);
 
-            Console.ForegroundColor = ConsoleColor.White;
             if (len > 0)
             {
-                for (int i = 0; i < len; i++) Console.Write("█");
+                // Draw cigarette (white)
+                ConsoleHelpers.Write(new string(block, len), Color.White);
 
-                // "animation"
-                Console.ForegroundColor = len % 3 == 0 ? ConsoleColor.DarkYellow :
-                                          len % 3 == 1 ? ConsoleColor.Red :
-                                                          ConsoleColor.Yellow;
-                Console.Write("█");
+                // Draw burning tip (animated)
+                Color tipColor = len % 3 == 0 ? Color.DarkGoldenrod :
+                               len % 3 == 1 ? Color.Red : Color.Yellow;
+                ConsoleHelpers.Write($"{block}", tipColor);
             }
 
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write("~~~~      ");
-            Console.ResetColor();
+            // Draw smoke trail
+            ConsoleHelpers.Write("~~~~      ", Color.Gray);
 
             Global.PIT.Wait(randTime); // Delay
         }
 
-        Console.Clear();
-        VGACursorFix.ShowCursor();
+        ConsoleHelpers.ClearConsole();
     }
 }

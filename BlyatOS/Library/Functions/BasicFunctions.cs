@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BlyatOS.Library.Helpers;
 
 namespace BlyatOS.Library.Functions;
 
@@ -26,26 +27,26 @@ public class BasicFunctions
 
         int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
 
-        Console.WriteLine($"--- Help Page {currentPage}/{totalPages} ({GetListTypeName(listType)}) ---"); 
-        Console.WriteLine($"--- | = command alias, <> = optional, [] = mandatory                   ---");
+        ConsoleHelpers.WriteLine($"--- Help Page {currentPage}/{totalPages} ({GetListTypeName(listType)}) ---");
+        ConsoleHelpers.WriteLine($"--- | = command alias, <> = optional, [] = mandatory                   ---");
 
         var wantedCommandsPage = commands.Skip((currentPage - 1) * commandsPerPage).Take(commandsPerPage);
 
         if (currentPage == 1)
         {
-            Console.WriteLine("---");
-            Console.WriteLine("command: help <page>");
-            Console.WriteLine("description: show help pages (optional page number)");
+            ConsoleHelpers.WriteLine("---");
+            ConsoleHelpers.WriteLine("command: help <page>");
+            ConsoleHelpers.WriteLine("description: show help pages (optional page number)");
         }
 
         foreach (var command in wantedCommandsPage)
         {
-            Console.WriteLine("---");
-            Console.WriteLine("command: " + command.Command);
-            Console.WriteLine("description: " + command.Description);
+            ConsoleHelpers.WriteLine("---");
+            ConsoleHelpers.WriteLine("command: " + command.Command);
+            ConsoleHelpers.WriteLine("description: " + command.Description);
         }
 
-        Console.WriteLine();
+        ConsoleHelpers.WriteLine();
     }
 
     private static List<Commands> GetCommandsForListType(ListType listType)
@@ -120,13 +121,14 @@ public class BasicFunctions
 
     public static void EchoFunction(string[] payload)
     {
-        if (payload.Length > 1)
+        if (payload.Length > 0)
         {
-            for (int i = 1; i < payload.Length; i++)
+            string str = "";
+            for (int i = 0; i < payload.Length; i++)
             {
-                Console.Write(payload[i] + " ");
+                str += (payload[i] + " ");
             }
-            Console.WriteLine();
+            ConsoleHelpers.WriteLine(str);
         }
     }
 
