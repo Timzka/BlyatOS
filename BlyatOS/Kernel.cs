@@ -545,6 +545,11 @@ public class Kernel : Sys.Kernel
 
                             break;
                         }
+                        case "neofetch":
+                            {
+                                Neofetch.Show(VersionInfo, MomentOfStart, UsersConf, CurrentUser, CurrentDirectory, fs);
+                                break;
+                            }
 
                     default:
                         throw new GenericException($"Unknown command '{command}'! Type \"help\" for help or \"exit\" to return!");
