@@ -60,7 +60,7 @@ public class Kernel : Sys.Kernel
         LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
         Global.PIT.Wait(10);
 
-        //OnStartUp.RunLoadingScreenThing();
+        OnStartUp.RunLoadingScreenThing();
         Global.PIT.Wait(1);
         StartupScreen.Show();
 

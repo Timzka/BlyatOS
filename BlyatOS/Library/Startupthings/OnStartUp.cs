@@ -8,7 +8,7 @@ namespace BlyatOS.Library.Startupthings;
 
 public class OnStartUp
 {
-    static char block = (char)219;
+    static char block = (char)9608;
     public static void RunLoadingScreenThing() //unneccessary, but i think it is really cool
     {
         int maxLength = 37;
