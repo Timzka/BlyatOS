@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
-using Cosmos.System.FileSystem; // For CosmosVFS
+using Cosmos.System.FileSystem;
 using BlyatOS.Library.Configs;
 using Cosmos.Core;
+using BlyatOS.Library.Helpers;
+using System.Drawing;
+using System.Collections.Generic;
 
 namespace BlyatOS.Library.Functions;
 
@@ -17,7 +20,6 @@ public static class Neofetch
             string currentUserName = currentUser?.Username ?? "unknown";
             int userCount = usersConfig.Users.Count;
 
-            // Disk / partition info
             ulong totalSize = 0;
             int partitions = 0;
             try
@@ -33,10 +35,8 @@ public static class Neofetch
                 }
             }
             catch { }
-
             string totalSizeMB = totalSize == 0 ? "n/a" : (totalSize / (1024 * 1024)).ToString() + " MB";
 
-            // RAM Werte holen
             ulong usedRamBytes = SafeUlong(GCImplementation.GetUsedRAM());
             ulong totalRamMB = SafeUlong(CPU.GetAmountOfRAM());
             ulong totalRamBytes = totalRamMB * 1024UL * 1024UL;
@@ -44,116 +44,155 @@ public static class Neofetch
 
             string[] art =
             {
-                " /$$$$$$$  /$$                       /$$",
-                "| $$__  $$| $$                      | $$",
-                "| $$  \\ $$| $$ /$$   /$$  /$$$$$$  /$$$$$$",
-                "| $$$$$$$ | $$| $$  | $$ |____  $$|_  $$_/",
-                "| $$__  $$| $$| $$  | $$  /$$$$$$$  | $$",
-                "| $$  \\ $$| $$| $$  | $$ /$$__  $$  | $$ /$$",
-                "| $$$$$$$/| $$|  $$$$$$$|  $$$$$$$  |  $$$$/",
-                "|_______/ |__/ \\____  $$ \\_______/   \\___/",
-                "               /$$  | $$",
-                "               |  $$$$$$/",
-                "               \\______/",
-                "  /$$$$$$   /$$$$$$",
-                " /$$__  $$ /$$__  $$",
-                "| $$  \\ $$| $$  \\__/",
-                "| $$  | $$|  $$$$$$",
-                "| $$  | $$ \\____  $$",
-                "| $$  | $$ /$$  \\ $$",
-                "|  $$$$$$/|  $$$$$$/",
-                "\\______/  \\______/"
+                " /$$$$$$$  /$$                       /$$      ",
+                "| $$__  $$| $$                      | $$      ",
+                "| $$  \\ $$| $$ /$$   /$$  /$$$$$$  /$$$$$$   ",
+                "| $$$$$$$ | $$| $$  | $$ |____  $$|_  $$_/    ",
+                "| $$__  $$| $$| $$  | $$  /$$$$$$$  | $$      ",
+                "| $$  \\ $$| $$| $$  | $$ /$$__  $$  | $$ /$$ ",
+                "| $$$$$$$/| $$|  $$$$$$$|  $$$$$$$  |  $$$$/  ",
+                "|_______/ |__/ \\____  $$ \\_______/   \\___/ ",
+                "               /$$  | $$                      ",
+                "              |  $$$$$$/                      ",
+                "               \\______/                      ",
 
+                "  /$$$$$$   /$$$$$$                           ",
+                " /$$__  $$ /$$__  $$                          ",
+                "| $$  \\ $$| $$  \\__/                        ",
+                "| $$  | $$|  $$$$$$                           ",
+                "| $$  | $$ \\____  $$                         ",
+                "| $$  | $$ /$$  \\ $$                         ",
+                "|  $$$$$$/|  $$$$$$/                          ",
+                "\\______/  \\______/                          "
             };
 
-            string[] infoLines =
+            string[] labels =
             {
-                $"BlyatOS v{version}",
-                $"User       : {currentUserName} (id {currentUserId})",
-                $"Users      : {userCount}",
-                $"Uptime     : {uptime}",
-                $"Directory  : {currentDirectory}",
-                $"Disks/Parts: {fs.Disks.Count}/{partitions} ({totalSizeMB})",
-                $"CPU        : {CPU.GetCPUBrandString()}",
-                $"Memory     : {memoryString}"
+                "BlyatOS","User"," Users","Uptime","Directory"," Disks/Parts","CPU","Memory"
+            };
+            string[] values =
+            {
+                $"v{version}",
+                $"{currentUserName} (id {currentUserId})",
+                userCount.ToString(),
+                uptime,
+                currentDirectory,
+                $"{fs.Disks.Count}/{partitions} ({totalSizeMB})",
+                CPU.GetCPUBrandString(),
+                memoryString
             };
 
-            int startTop = SafeCursorTop(); // Startposition merken
-            int artWidth = art.Max(l => l.Length);
-            int gap = 3; // Abstand zwischen Spalten
-            int infoStartCol = artWidth + gap; // feste Startspalte rechte Spalte
+            int artWidth = MaxLength(art);
+            int gap = 1; // möglichst direkt nach Art
+            int totalWidth = GetConsoleCharWidth();
 
-            // Linke Spalte zuerst komplett zeichnen
-            foreach (var line in art)
+            // Wir berechnen Wrap pro Eintrag abhängig von Restbreite hinter Art + Gap + Label + " : "
+            // Für Einfachheit nutzen wir maximale Restbreite (ab größter Art-Linie)
+            int maxAvailable = totalWidth - artWidth - gap - 1; // -1 Puffer
+            if (maxAvailable < 20) maxAvailable = 20;
+
+            // Flatten info entries
+            List<(string Label, string ValueSeg, bool First, int LabelLen)> infoRows = new();
+            for (int i = 0; i < labels.Length; i++)
             {
-                System.Console.ForegroundColor = ConsoleColor.Red;
-                System.Console.WriteLine(line);
-                System.Console.ResetColor();
+                int labelLen = labels[i].Length;
+                int valueWidth = maxAvailable - (labelLen + 3); // Platz für Value hinter "Label : "
+                if (valueWidth < 5) valueWidth = 5;
+                var segs = WrapValue(values[i], valueWidth);
+                for (int s = 0; s < segs.Count; s++)
+                {
+                    bool first = s == 0;
+                    infoRows.Add((first ? labels[i] : string.Empty, segs[s], first, labelLen));
+                }
             }
 
-            int artEndTop = SafeCursorTop(); // Untere Grenze der Art
-
-            // Rechte Spalte unabhängig platzieren
-            int bufferWidth = GetBufferWidthSafe();
-            int maxRightWidth = bufferWidth - infoStartCol - 1;
-            if (maxRightWidth < 10) maxRightWidth = 10;
-
-            int row = startTop; // Start direkt neben oberster Art-Zeile
-            foreach (var info in infoLines)
+            int totalRows = art.Length > infoRows.Count ? art.Length : infoRows.Count;
+            for (int r = 0; r < totalRows; r++)
             {
-                row = WriteInfoWrapped(infoStartCol, row, info, maxRightWidth);
+                if (r < art.Length)
+                    ConsoleHelpers.Write(art[r], Color.Red);
+                else
+                    ConsoleHelpers.Write(new string(' ', artWidth));
+
+                // Gap (nur 1 Space)
+                ConsoleHelpers.Write(" ");
+
+                if (r < infoRows.Count)
+                {
+                    var row = infoRows[r];
+                    if (row.First)
+                    {
+                        // Kein Padding, direkt Label ausgeben
+                        ConsoleHelpers.Write(row.Label, Color.Yellow);
+                        ConsoleHelpers.Write(" : ", Color.Yellow);
+                    }
+                    else
+                    {
+                        // Fortsetzungszeile: gleiche Startposition für Value wie in erster Zeile
+                        ConsoleHelpers.Write(new string(' ', row.LabelLen + 3), Color.Yellow);
+                    }
+                    ConsoleHelpers.Write(row.ValueSeg, Color.Yellow);
+                }
+                ConsoleHelpers.WriteLine();
             }
 
-            // Cursor unter den größeren Block setzen
-            int finalRow = Math.Max(row, artEndTop);
-            TrySetCursorPosition(0, finalRow);
-            System.Console.WriteLine();
+            ConsoleHelpers.WriteLine();
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"neofetch failed: {ex.Message}");
+            ConsoleHelpers.WriteLine($"neofetch failed: {ex.Message}");
         }
     }
 
-    // Schreibt Text mit Wrap an (column,row). Gibt nächste freie Zeile zurück.
-    private static int WriteInfoWrapped(int column, int row, string text, int maxWidth)
+    private static int MaxLength(string[] arr)
     {
+        int max = 0;
+        for (int i = 0; i < arr.Length; i++) if (arr[i].Length > max) max = arr[i].Length;
+        return max;
+    }
+
+    private static List<string> WrapValue(string value, int maxWidth)
+    {
+        List<string> result = new List<string>();
+        if (string.IsNullOrEmpty(value)) { result.Add(""); return result; }
+        if (maxWidth <= 0) { result.Add(value); return result; }
+
         int idx = 0;
-        bool first = true;
-        System.Console.ForegroundColor = ConsoleColor.Yellow;
-        while (idx < text.Length)
+        while (idx < value.Length)
         {
-            int take = Math.Min(maxWidth, text.Length - idx);
-            string part = text.Substring(idx, take);
-            TrySetCursorPosition(column, row);
-            System.Console.Write(part);
-            idx += take;
-            row++; // nächste Zeile nur für rechte Spalte
-            first = false;
+            int len = value.Length - idx;
+            if (len > maxWidth) len = maxWidth;
+
+            if (len == maxWidth && idx + len < value.Length)
+            {
+                int spacePos = LastSpace(value, idx, len);
+                if (spacePos >= idx)
+                {
+                    len = spacePos - idx + 1;
+                }
+            }
+
+            string segment = value.Substring(idx, len).TrimEnd();
+            result.Add(segment);
+            idx += len;
+            while (idx < value.Length && value[idx] == ' ') idx++;
         }
-        System.Console.ResetColor();
-        return row; // freie Zeile unterhalb
+        return result;
     }
 
-    private static int GetBufferWidthSafe()
+    private static int LastSpace(string value, int start, int len)
     {
-        try
+        for (int i = start + len - 1; i >= start; i--)
         {
-            int w = System.Console.BufferWidth;
-            if (w > 0) return w;
+            if (value[i] == ' ') return i;
         }
-        catch { }
-        return 80; // Fallback
+        return -1;
     }
 
-    private static int SafeCursorTop()
+    private static int GetConsoleCharWidth()
     {
-        try { return System.Console.CursorTop; } catch { return 0; }
-    }
-
-    private static void TrySetCursorPosition(int left, int top)
-    {
-        try { System.Console.SetCursorPosition(left, top); } catch { }
+        try { return (int)(DisplaySettings.ScreenWidth / DisplaySettings.Font.Width) - 1; }
+        catch { return 80; }
     }
 
     private static string FormatBytes(ulong bytes)
@@ -161,12 +200,9 @@ public static class Neofetch
         const double KB = 1024.0;
         const double MB = KB * 1024.0;
         const double GB = MB * 1024.0;
-        if (bytes >= GB)
-            return (bytes / GB).ToString("0.00") + " GB";
-        if (bytes >= MB)
-            return (bytes / MB).ToString("0.00") + " MB";
-        if (bytes >= KB)
-            return (bytes / KB).ToString("0.00") + " KB";
+        if (bytes >= GB) return (bytes / GB).ToString("0.00") + " GB";
+        if (bytes >= MB) return (bytes / MB).ToString("0.00") + " MB";
+        if (bytes >= KB) return (bytes / KB).ToString("0.00") + " KB";
         return bytes + " B";
     }
 
