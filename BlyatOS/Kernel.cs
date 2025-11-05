@@ -30,7 +30,6 @@ public class Kernel : Sys.Kernel
     bool Logged_In = false;
     Random Rand = new Random(DateTime.Now.Millisecond);
 
-    // Display settings are now managed in DisplaySettings.cs
 
     Sys.FileSystem.CosmosVFS fs;
     FileSystemHelpers fsh = new FileSystemHelpers();
@@ -50,9 +49,9 @@ public class Kernel : Sys.Kernel
 
     protected override void BeforeRun()
     {
-        // Initialize display settings and graphics
-        DisplaySettings.ScreenWidth = 640;
-        DisplaySettings.ScreenHeight = 480;
+        // Initialize display settings and graphics1024x768
+        DisplaySettings.ScreenWidth = 1024;
+        DisplaySettings.ScreenHeight = 768;
         Global.PIT.Wait(10);
         InitializeGraphics();
         fs = new Sys.FileSystem.CosmosVFS();
@@ -60,7 +59,7 @@ public class Kernel : Sys.Kernel
         LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
         Global.PIT.Wait(10);
 
-        //OnStartUp.RunLoadingScreenThing();
+        OnStartUp.RunLoadingScreenThing();
         Global.PIT.Wait(1);
         StartupScreen.Show();
 
@@ -110,7 +109,7 @@ public class Kernel : Sys.Kernel
             string[] files = fsh.GetFiles(CurrentDirectory);
 
             // Display current directory and prompt
-            string prompt = $"input> ";
+            string prompt = $"{CurrentDirectory}> ";
             var input = ConsoleHelpers.ReadLine(prompt);
 
             if (string.IsNullOrWhiteSpace(input))

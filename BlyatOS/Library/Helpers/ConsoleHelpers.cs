@@ -229,7 +229,7 @@ namespace BlyatOS.Library.Helpers
 
             try
             {
-                string message = "[Drücke eine Taste zum Fortfahren...]";
+                string message = "[Press any key to Continue...]";
                 var greenPen = new Pen(Color.Green);
                 var bgPen = new Pen(DefaultBackground);
 
@@ -444,6 +444,7 @@ namespace BlyatOS.Library.Helpers
 
         public static void WriteLine(string text = "", Color? foreground = null, Color? background = null)
             => WriteStyled(text + "\n", foreground, background);
+
 
         // === INPUT ===
         public static string ReadLine(string prompt = "> ", Color? promptColor = null)

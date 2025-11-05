@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using BlyatOS.Library.Helpers;
+using Cosmos.HAL;
 using Cosmos.System.Graphics;
 using Cosmos.System.Graphics.Fonts;
 using Sys = Cosmos.System;
@@ -120,6 +121,9 @@ namespace BlyatOS.Library.Configs
                     Console.Clear();
                     Console.WriteLine($"Graphics initialization failed: {ex.Message}");
                     Console.WriteLine("Falling back to text mode.");
+                    Console.ReadKey();
+
+                    Cosmos.System.Power.Shutdown();
                 }
             }
         }
@@ -173,21 +177,21 @@ namespace BlyatOS.Library.Configs
 
         private static readonly List<Colorset> ColorSets = new()
         {
-            new Colorset(Color.Black, Color.White),       // 0
-            new Colorset(Color.Blue, Color.Orange),       // 1
-            new Colorset(Color.DarkGreen, Color.LightGreen), // 2
-            new Colorset(Color.DarkBlue, Color.LightCyan),   // 3
-            new Colorset(Color.DarkRed, Color.Pink),         // 4
+            new Colorset(Color.Black, Color.White),          // 0
+            new Colorset(Color.Black, Color.Orange),         // 1
+            new Colorset(Color.Black, Color.Yellow),         // 2
+            new Colorset(Color.DarkBlue, Color.White),       // 3
+            new Colorset(Color.DarkBlue, Color.Orange),      // 4
             new Colorset(Color.DarkMagenta, Color.Yellow),   // 5
-            new Colorset(Color.Gray, Color.Black),           // 6
-            new Colorset(Color.DarkCyan, Color.White),       // 7
-            new Colorset(Color.DarkGoldenrod, Color.DarkRed),   // 8
-            new Colorset(Color.White, Color.Black),          // 9
-            new Colorset(Color.Cyan, Color.DarkBlue),        // 10
-            new Colorset(Color.Green, Color.DarkGreen),      // 11
-            new Colorset(Color.Magenta, Color.LightPink),    // 12
-            new Colorset(Color.Orange, Color.DarkBlue),      // 13
-            new Colorset(Color.Brown, Color.LightYellow)     // 14
+            new Colorset(Color.DarkMagenta, Color.Orange),   // 6
+            new Colorset(Color.White, Color.Black),          // 7
+            new Colorset(Color.White, Color.Orange),         // 8
+            new Colorset(Color.Blue, Color.Orange),          // 9
+            new Colorset(Color.Magenta, Color.White),        // 10
+            new Colorset(Color.Orange, Color.Black),         // 11
+            new Colorset(Color.Orange, Color.White),         // 12
+            new Colorset(Color.Pink, Color.Black),           // 13
+            new Colorset(Color.Pink, Color.White)            // 14
         };
     }
 

@@ -22,7 +22,7 @@ public class BlyatgamesApp
         do
         {
             ConsoleHelpers.WriteLine();
-            ConsoleHelpers.Write("Input: ");
+            ConsoleHelpers.Write("BlyatGames> ");
 
             var userInput = ConsoleHelpers.ReadLine();
 
@@ -36,6 +36,8 @@ public class BlyatgamesApp
                 case "tetris":
                     {
                         ConsoleHelpers.ClearConsole();
+                        ConsoleHelpers.WriteLine("Starting BadTetris...");
+                        Global.PIT.Wait(100);
                         BadTetris game = new BadTetris();
                         game.Run();
                         ConsoleHelpers.ClearConsole();
@@ -75,7 +77,7 @@ public class BlyatgamesApp
                             {
                                 break;
                             }
-                            canvas.DrawImage(bitmap, rand.Next(0, 512), rand.Next(0, 360));
+                            canvas.DrawImage(bitmap, rand.Next(200, DisplaySettings.ScreenWidth)-200, rand.Next(200, DisplaySettings.ScreenHeight) -200);
                             canvas.Display();
                             Global.PIT.Wait(500);
                         }

@@ -15,7 +15,7 @@ public class UserManagementApp
         do
         {
             ConsoleHelpers.WriteLine("You are now in UserManagement, write \"mainMenu\" to go back or \"help\" for available commands");
-            ConsoleHelpers.Write("Input: ");
+            ConsoleHelpers.Write("UserManagement> ");
 
             var userInput = ConsoleHelpers.ReadLine();
 
