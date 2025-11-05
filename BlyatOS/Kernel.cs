@@ -143,7 +143,7 @@ public class Kernel : Sys.Kernel
                             BasicFunctions.Help(page, BasicFunctions.ListType.Main);
                             break;
                         }
-                    case "changeColor":
+                    case "changecolor":
                         {
                             DisplaySettings.ChangeColorSet();
                             break;
