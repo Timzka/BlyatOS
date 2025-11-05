@@ -124,12 +124,13 @@ public class BasicFunctions
     {
         if (payload.Length > 0)
         {
-            string str = "";
+            string input = "";
             for (int i = 0; i < payload.Length; i++)
             {
-                str += (payload[i] + " ");
+                input += (payload[i] + " ");
             }
-            ConsoleHelpers.WriteLine(str);
+            string output = ConsoleHelpers.ProcessEscapeSequences(input);
+            ConsoleHelpers.WriteLine(output);
         }
     }
 

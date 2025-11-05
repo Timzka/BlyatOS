@@ -23,7 +23,7 @@ public class OnStartUp
         "  ~~      ",
         "  ~       "
         };
-        ConsoleHelpers.ClearConsole();
+        ConsoleHelpers.ClearConsole(); //it broken (smoke on top no showing)
 
         for (int len = maxLength; len >= 0; len--)
         {

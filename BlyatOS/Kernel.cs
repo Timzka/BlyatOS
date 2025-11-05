@@ -60,7 +60,7 @@ public class Kernel : Sys.Kernel
         LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
         Global.PIT.Wait(10);
 
-        OnStartUp.RunLoadingScreenThing();
+        //OnStartUp.RunLoadingScreenThing();
         Global.PIT.Wait(1);
         StartupScreen.Show();
 
@@ -132,7 +132,6 @@ public class Kernel : Sys.Kernel
                 {
                     commandArgs.Add(args[i++]);
                 }
-
                 // Process the command with its arguments
                 switch (command)
                 {
@@ -142,6 +141,11 @@ public class Kernel : Sys.Kernel
                             if (commandArgs.Count > 0 && int.TryParse(commandArgs[0], out int p)) page = p;
                             ConsoleHelpers.ClearConsole();
                             BasicFunctions.Help(page, BasicFunctions.ListType.Main);
+                            break;
+                        }
+                    case "changeColor":
+                        {
+                            DisplaySettings.ChangeColorSet();
                             break;
                         }
                     case "rmsys":
@@ -451,8 +455,8 @@ public class Kernel : Sys.Kernel
 
                                 if (!stream.CanWrite)
                                     throw new GenericException($"Stream not writable for '{path}'", "write", "filesystem");
-
-                                byte[] bytes = Encoding.ASCII.GetBytes(content);
+                                string toWrite = ConsoleHelpers.ProcessEscapeSequences(content);
+                                byte[] bytes = Encoding.ASCII.GetBytes(toWrite);
 
                                 if (mode == "overwrite")
                                 {
@@ -597,5 +601,6 @@ public class Kernel : Sys.Kernel
                 Global.PIT.Wait(1000);
             }
         }
+        ConsoleHelpers.ClearConsole();
     }
 }

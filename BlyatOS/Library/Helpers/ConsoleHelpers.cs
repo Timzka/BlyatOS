@@ -13,7 +13,7 @@ namespace BlyatOS.Library.Helpers
 {
     public static class ConsoleHelpers
     {
-        // Character with color information
+        // === INTERNAL STRUCTURES ===
         private class ColoredChar
         {
             public char Character { get; set; }
@@ -32,22 +32,21 @@ namespace BlyatOS.Library.Helpers
         private static Color DefaultBackground => DisplaySettings.BackgroundColor;
 
         private static int _cursorX;
-        private static int _cursorY; // Absolute line number
+        private static int _cursorY;
         private static int _scrollOffset;
 
         private const int SCROLL_THRESHOLD = 2;
-        private const int BATCH_DISPLAY_THRESHOLD = 50; // Display after this many characters
+        private const int BATCH_DISPLAY_THRESHOLD = 50;
         private static readonly List<List<ColoredChar>> _screenBuffer = new();
         private static List<ColoredChar> _currentLine = new();
 
         private static bool _isRedrawing = false;
-        private static int _charsSinceDisplay = 0; // Track characters for batch display
+        private static int _charsSinceDisplay = 0;
 
         private static int MaxWidth => (int)(DisplaySettings.ScreenWidth / DisplaySettings.Font.Width) - 1;
         private static int MaxHeight => (int)(DisplaySettings.ScreenHeight / DisplaySettings.Font.Height) - 1;
 
-        // === BASIC CONSOLE CONTROL ===
-
+        // === CLEAR / CURSOR ===
         public static void ClearConsole()
         {
             try
@@ -66,7 +65,7 @@ namespace BlyatOS.Library.Helpers
                 _isRedrawing = false;
                 _charsSinceDisplay = 0;
             }
-            catch (Exception ex)
+            catch
             {
                 _cursorX = 0;
                 _cursorY = 0;
@@ -93,165 +92,123 @@ namespace BlyatOS.Library.Helpers
                 visibleY = Math.Max(0, Math.Min(visibleY, MaxHeight));
                 Console.SetCursorPosition(Math.Max(0, Math.Min(_cursorX, MaxWidth)), visibleY);
             }
-            catch
-            {
-                // Ignore cursor position errors
-            }
+            catch { }
         }
 
-        public static void ReadKey()
-        {
-            Console.ReadKey();
-        }
+        public static void ReadKey() => Console.ReadKey();
 
-        // === SCROLLING ===
-
+        // === SCROLLING (KEPT FOR FUTURE USE) ===
         private static void ScrollUp()
         {
             if (_isRedrawing) return;
-
             try
             {
                 _scrollOffset++;
-
                 if (_scrollOffset > _screenBuffer.Count)
-                {
                     _scrollOffset = Math.Max(0, _screenBuffer.Count - 1);
-                }
-
                 RedrawScreen();
             }
-            catch (Exception ex)
+            catch
             {
                 _isRedrawing = false;
+            }
+        }
+
+        private static void DrawOptimizedLine(List<ColoredChar> line, int screenY, Canvas canvas, Font font)
+        {
+            if (line.Count == 0) return;
+
+            int x = 0;
+            int i = 0;
+
+            while (i < line.Count && x < MaxWidth)
+            {
+                var currentChar = line[i];
+                var sb = new StringBuilder();
+                sb.Append(currentChar.Character);
+
+                int j = i + 1;
+                while (j < line.Count &&
+                       x + (j - i) < MaxWidth &&
+                       line[j].Foreground.ToArgb() == currentChar.Foreground.ToArgb() &&
+                       line[j].Background.ToArgb() == currentChar.Background.ToArgb())
+                {
+                    sb.Append(line[j].Character);
+                    j++;
+                }
+
                 try
                 {
-                    var canvas = DisplaySettings.Canvas;
-                    canvas?.Clear(DefaultBackground);
-                    canvas?.Display();
+                    string text = sb.ToString();
+                    int px = x * font.Width;
+                    int py = screenY * font.Height;
+
+                    if (px >= 0 && py >= 0 &&
+                        px + (text.Length * font.Width) <= DisplaySettings.ScreenWidth &&
+                        py + font.Height <= DisplaySettings.ScreenHeight)
+                    {
+                        var pen = new Pen(currentChar.Foreground);
+                        var bgPen = new Pen(currentChar.Background);
+
+                        canvas.DrawFilledRectangle(bgPen, px, py, text.Length * font.Width, font.Height);
+                        canvas.DrawString(text, font, pen, px, py);
+                    }
                 }
                 catch { }
+
+                x += (j - i);
+                i = j;
             }
         }
 
         private static void RedrawScreen()
         {
             if (_isRedrawing) return;
-
             var canvas = DisplaySettings.Canvas;
             var font = DisplaySettings.Font;
-
             if (canvas == null || font == null) return;
 
             try
             {
                 _isRedrawing = true;
-
                 canvas.Clear(DefaultBackground);
 
                 int screenY = 0;
                 int startLine = _scrollOffset;
                 int endLine = Math.Min(_scrollOffset + MaxHeight + 1, _screenBuffer.Count);
 
-                // Draw buffered lines in batch
                 for (int i = startLine; i < endLine && screenY <= MaxHeight; i++)
                 {
                     if (i >= 0 && i < _screenBuffer.Count)
                     {
-                        var line = _screenBuffer[i];
-                        int x = 0;
-
-                        foreach (var coloredChar in line)
-                        {
-                            if (x >= MaxWidth) break;
-
-                            try
-                            {
-                                var pen = new Pen(coloredChar.Foreground);
-                                var bgPen = new Pen(coloredChar.Background);
-
-                                int px = x * font.Width;
-                                int py = screenY * font.Height;
-
-                                if (px >= 0 && py >= 0 &&
-                                    px + font.Width <= DisplaySettings.ScreenWidth &&
-                                    py + font.Height <= DisplaySettings.ScreenHeight)
-                                {
-                                    canvas.DrawFilledRectangle(bgPen, px, py, font.Width, font.Height);
-                                    canvas.DrawString(coloredChar.Character.ToString(), font, pen, px, py);
-                                }
-                            }
-                            catch { }
-
-                            x++;
-                        }
-
+                        DrawOptimizedLine(_screenBuffer[i], screenY, canvas, font);
                         screenY++;
                     }
                 }
 
-                // Draw current line
                 int currentLineAbsoluteY = _screenBuffer.Count;
                 if (currentLineAbsoluteY >= _scrollOffset &&
                     currentLineAbsoluteY <= _scrollOffset + MaxHeight &&
                     _currentLine.Count > 0)
                 {
                     int currentLineScreenY = currentLineAbsoluteY - _scrollOffset;
-                    int x = 0;
-
-                    foreach (var coloredChar in _currentLine)
-                    {
-                        if (x >= MaxWidth) break;
-
-                        try
-                        {
-                            var pen = new Pen(coloredChar.Foreground);
-                            var bgPen = new Pen(coloredChar.Background);
-
-                            int px = x * font.Width;
-                            int py = currentLineScreenY * font.Height;
-
-                            if (px >= 0 && py >= 0 &&
-                                px + font.Width <= DisplaySettings.ScreenWidth &&
-                                py + font.Height <= DisplaySettings.ScreenHeight)
-                            {
-                                canvas.DrawFilledRectangle(bgPen, px, py, font.Width, font.Height);
-                                canvas.DrawString(coloredChar.Character.ToString(), font, pen, px, py);
-                            }
-                        }
-                        catch { }
-
-                        x++;
-                    }
+                    DrawOptimizedLine(_currentLine, currentLineScreenY, canvas, font);
                 }
 
                 canvas.Display();
                 UpdateCursorPosition();
             }
-            catch (Exception ex)
-            {
-                try
-                {
-                    canvas.Clear(DefaultBackground);
-                    canvas.Display();
-                }
-                catch { }
-            }
-            finally
-            {
-                _isRedrawing = false;
-            }
+            catch { }
+            finally { _isRedrawing = false; }
         }
 
         private static void CheckAndScroll()
         {
             if (_isRedrawing) return;
-
             try
             {
                 int absoluteLine = _screenBuffer.Count;
                 int visibleLine = absoluteLine - _scrollOffset;
-
                 int scrollCount = 0;
                 while (visibleLine > MaxHeight - SCROLL_THRESHOLD && scrollCount < 10)
                 {
@@ -260,33 +217,124 @@ namespace BlyatOS.Library.Helpers
                     scrollCount++;
                 }
             }
+            catch { _scrollOffset = Math.Max(0, _screenBuffer.Count - MaxHeight); }
+        }
+
+        // === TEMPORARY SCROLL REPLACEMENT ===
+        private static void PauseAndClear()
+        {
+            var canvas = DisplaySettings.Canvas;
+            var font = DisplaySettings.Font;
+            if (canvas == null || font == null) return;
+
+            try
+            {
+                string message = "[DrÃ¼cke eine Taste zum Fortfahren...]";
+                var greenPen = new Pen(Color.Green);
+                var bgPen = new Pen(DefaultBackground);
+
+                int messageY = MaxHeight * font.Height;
+                int messageX = 0;
+
+                canvas.DrawFilledRectangle(bgPen, messageX, messageY,
+                    message.Length * font.Width, font.Height);
+                canvas.DrawString(message, font, greenPen, messageX, messageY);
+                canvas.Display();
+
+                while (!Sys.KeyboardManager.KeyAvailable)
+                    Global.PIT.Wait(10);
+                Sys.KeyboardManager.ReadKey();
+
+                ClearConsole();
+            }
             catch
             {
-                _scrollOffset = Math.Max(0, _screenBuffer.Count - MaxHeight);
+                ClearConsole();
             }
         }
 
-        // Ensure cursor is visible after write operations
         private static void EnsureCursorVisible()
         {
             int absoluteLine = _screenBuffer.Count;
             int visibleLine = absoluteLine - _scrollOffset;
 
-            // If cursor is not visible, scroll to make it visible
-            while (visibleLine > MaxHeight && _scrollOffset < _screenBuffer.Count)
+            if (visibleLine > MaxHeight - SCROLL_THRESHOLD)
             {
-                _scrollOffset++;
-                visibleLine = absoluteLine - _scrollOffset;
-            }
-
-            if (visibleLine > MaxHeight)
-            {
-                RedrawScreen();
+                PauseAndClear();
             }
         }
 
-        // === TEXT OUTPUT ===
+        // === ESCAPE SEQUENCE PROCESSING ===
+        public static string ProcessEscapeSequences(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
 
+            var result = new StringBuilder();
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (input[i] == '\\' && i + 1 < input.Length)
+                {
+                    switch (input[i + 1])
+                    {
+                        case 'n':
+                            result.Append('\n');
+                            i++;
+                            break;
+                        case 't':
+                            result.Append('\t');
+                            i++;
+                            break;
+                        case 'r':
+                            result.Append('\r');
+                            i++;
+                            break;
+                        case '\\':
+                            result.Append('\\');
+                            i++;
+                            break;
+                        default:
+                            result.Append(input[i]);
+                            break;
+                    }
+                }
+                else
+                {
+                    result.Append(input[i]);
+                }
+            }
+            return result.ToString();
+        }
+
+        // === CODEPAGE-437 MAPPING ===
+        private static char MapToCodePage437(char c)
+        {
+            switch (c)
+            {
+                case 'Ã¤': return (char)132;
+                case 'Ã¶': return (char)148;
+                case 'Ã¼': return (char)129;
+                case 'Ã„': return (char)142;
+                case 'Ã–': return (char)153;
+                case 'Ãœ': return (char)154;
+                case 'ÃŸ': return (char)225;
+                case '\r': return '\0';
+                default: return c;
+            }
+        }
+
+        private static string MapStringToCodePage437(string input)
+        {
+            var sb = new StringBuilder(input.Length);
+            foreach (char c in input)
+            {
+                char mapped = MapToCodePage437(c);
+                if (mapped != '\0')
+                    sb.Append(mapped);
+            }
+            return sb.ToString();
+        }
+
+        // === TEXT OUTPUT ===
         private static void WriteChar(char c, Color? foreground = null, Color? background = null, bool batchMode = false)
         {
             var canvas = DisplaySettings.Canvas;
@@ -298,40 +346,31 @@ namespace BlyatOS.Library.Helpers
 
             try
             {
-                // Handle newline
                 if (c == '\n')
                 {
                     _screenBuffer.Add(new List<ColoredChar>(_currentLine));
                     _currentLine = new List<ColoredChar>();
                     _cursorX = 0;
                     _cursorY++;
-
-                    // Force display on newline
                     if (batchMode)
                     {
                         canvas.Display();
                         _charsSinceDisplay = 0;
                     }
-
-                    CheckAndScroll();
                     UpdateCursorPosition();
                     return;
                 }
 
-                // Handle line wrap
                 if (_cursorX >= MaxWidth)
                 {
                     _screenBuffer.Add(new List<ColoredChar>(_currentLine));
                     _currentLine = new List<ColoredChar>();
                     _cursorX = 0;
                     _cursorY++;
-                    CheckAndScroll();
                 }
 
-                // Add to current line
                 _currentLine.Add(new ColoredChar(c, fg, bg));
 
-                // Draw if visible
                 int absoluteY = _screenBuffer.Count;
                 int visibleY = absoluteY - _scrollOffset;
 
@@ -339,18 +378,14 @@ namespace BlyatOS.Library.Helpers
                 {
                     int px = _cursorX * font.Width;
                     int py = visibleY * font.Height;
-
                     if (px >= 0 && py >= 0 &&
                         px + font.Width <= DisplaySettings.ScreenWidth &&
                         py + font.Height <= DisplaySettings.ScreenHeight)
                     {
                         var pen = new Pen(fg);
                         var bgPen = new Pen(bg);
-
                         canvas.DrawFilledRectangle(bgPen, px, py, font.Width, font.Height);
                         canvas.DrawString(c.ToString(), font, pen, px, py);
-
-                        // Batch display: only update screen every N characters
                         if (batchMode)
                         {
                             _charsSinceDisplay++;
@@ -360,10 +395,7 @@ namespace BlyatOS.Library.Helpers
                                 _charsSinceDisplay = 0;
                             }
                         }
-                        else
-                        {
-                            canvas.Display();
-                        }
+                        else canvas.Display();
                     }
                 }
 
@@ -385,87 +417,51 @@ namespace BlyatOS.Library.Helpers
         {
             if (string.IsNullOrEmpty(text)) return;
 
+            text = MapStringToCodePage437(text);
+
             var canvas = DisplaySettings.Canvas;
             if (canvas == null) return;
 
             try
             {
-                // Use batch mode for longer texts
                 bool useBatchMode = text.Length > BATCH_DISPLAY_THRESHOLD;
-
                 foreach (char c in text)
-                {
                     WriteChar(c, foreground, background, useBatchMode);
-                }
 
-                // Final display if in batch mode
                 if (useBatchMode && _charsSinceDisplay > 0)
                 {
                     canvas.Display();
                     _charsSinceDisplay = 0;
                 }
 
-                // Ensure cursor/input prompt is visible after write
                 EnsureCursorVisible();
             }
-            catch
-            {
-                // Continue even if some characters fail
-            }
+            catch { }
         }
 
-        public static void Write(string text, Color? foreground = null, Color? background = null) =>
-            WriteStyled(text, foreground, background);
+        public static void Write(string text, Color? foreground = null, Color? background = null)
+            => WriteStyled(text, foreground, background);
 
         public static void WriteLine(string text = "", Color? foreground = null, Color? background = null)
-        {
-            WriteStyled(text + "\n", foreground, background);
-        }
+            => WriteStyled(text + "\n", foreground, background);
 
-        // === INPUT WITH GERMAN CHARACTERS ===
-
-        // German keyboard layout mapping
-        private static char GetGermanChar(Sys.KeyEvent key)
-        {
-            // Handle German umlauts and special characters
-            if (key.Key == Sys.ConsoleKeyEx.NoName)
-            {
-                // Check for German specific keys by scancode or KeyChar
-                switch (key.KeyChar)
-                {
-                    case 'ä': return 'ä';
-                    case 'Ä': return 'Ä';
-                    case 'ö': return 'ö';
-                    case 'Ö': return 'Ö';
-                    case 'ü': return 'ü';
-                    case 'Ü': return 'Ü';
-                    case 'ß': return 'ß';
-                }
-            }
-
-            // Standard character
-            return key.KeyChar;
-        }
-
+        // === INPUT ===
         public static string ReadLine(string prompt = "> ", Color? promptColor = null)
         {
             Write(prompt, promptColor);
             var input = new StringBuilder();
-
             var canvas = DisplaySettings.Canvas;
             var font = DisplaySettings.Font;
             var pen = new Pen(DefaultForeground);
             var bgPen = new Pen(DefaultBackground);
 
             bool done = false;
-
             while (!done)
             {
                 while (!Sys.KeyboardManager.KeyAvailable)
                     Global.PIT.Wait(10);
 
                 var key = Sys.KeyboardManager.ReadKey();
-
                 switch (key.Key)
                 {
                     case Sys.ConsoleKeyEx.Enter:
@@ -474,7 +470,6 @@ namespace BlyatOS.Library.Helpers
                         _currentLine = new List<ColoredChar>();
                         _cursorX = 0;
                         _cursorY++;
-                        CheckAndScroll();
                         EnsureCursorVisible();
                         UpdateCursorPosition();
                         break;
@@ -483,15 +478,11 @@ namespace BlyatOS.Library.Helpers
                         if (input.Length > 0)
                         {
                             input.Length--;
-
                             if (_cursorX > 0)
                             {
                                 _cursorX--;
                                 if (_currentLine.Count > 0)
-                                {
                                     _currentLine.RemoveAt(_currentLine.Count - 1);
-                                }
-
                                 try
                                 {
                                     int visibleY = _screenBuffer.Count - _scrollOffset;
@@ -505,25 +496,24 @@ namespace BlyatOS.Library.Helpers
                                     }
                                 }
                                 catch { }
-
                                 UpdateCursorPosition();
                             }
                         }
                         break;
 
                     default:
-                        char inputChar = GetGermanChar(key);
+                        char inputChar = key.KeyChar;
 
                         if (inputChar != 0 && !char.IsControl(inputChar))
                         {
-                            WriteChar(inputChar);
                             input.Append(inputChar);
+                            char displayChar = MapToCodePage437(inputChar);
+                            WriteChar(displayChar);
                             EnsureCursorVisible();
                         }
                         break;
                 }
             }
-
             return input.ToString();
         }
 
@@ -531,21 +521,18 @@ namespace BlyatOS.Library.Helpers
         {
             Write(prompt, promptColor);
             var password = new StringBuilder();
-
             var canvas = DisplaySettings.Canvas;
             var font = DisplaySettings.Font;
             var pen = new Pen(DefaultForeground);
             var bgPen = new Pen(DefaultBackground);
 
             bool done = false;
-
             while (!done)
             {
                 while (!Sys.KeyboardManager.KeyAvailable)
                     Global.PIT.Wait(10);
 
                 var key = Sys.KeyboardManager.ReadKey();
-
                 switch (key.Key)
                 {
                     case Sys.ConsoleKeyEx.Enter:
@@ -554,7 +541,6 @@ namespace BlyatOS.Library.Helpers
                         _currentLine = new List<ColoredChar>();
                         _cursorX = 0;
                         _cursorY++;
-                        CheckAndScroll();
                         EnsureCursorVisible();
                         UpdateCursorPosition();
                         break;
@@ -563,15 +549,11 @@ namespace BlyatOS.Library.Helpers
                         if (password.Length > 0)
                         {
                             password.Length--;
-
                             if (_cursorX > 0)
                             {
                                 _cursorX--;
                                 if (_currentLine.Count > 0)
-                                {
                                     _currentLine.RemoveAt(_currentLine.Count - 1);
-                                }
-
                                 try
                                 {
                                     int visibleY = _screenBuffer.Count - _scrollOffset;
@@ -585,14 +567,13 @@ namespace BlyatOS.Library.Helpers
                                     }
                                 }
                                 catch { }
-
                                 UpdateCursorPosition();
                             }
                         }
                         break;
 
                     default:
-                        char inputChar = GetGermanChar(key);
+                        char inputChar = key.KeyChar;
 
                         if (inputChar != 0 && !char.IsControl(inputChar))
                         {
@@ -603,7 +584,6 @@ namespace BlyatOS.Library.Helpers
                         break;
                 }
             }
-
             return password.ToString();
         }
     }

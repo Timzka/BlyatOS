@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using BlyatOS.Library.Helpers;
 using Cosmos.System.Graphics;
 using Cosmos.System.Graphics.Fonts;
 using Sys = Cosmos.System;
@@ -31,6 +32,29 @@ namespace BlyatOS.Library.Configs
             }
         }
 
+        public static void ChangeColorSet()
+        {
+            ConsoleHelpers.WriteLine($"Choose a Color", Color.Yellow);
+            ConsoleHelpers.WriteLine("0. Black / White", Color.White);
+            ConsoleHelpers.WriteLine("1. Blue / Orange", Color.Orange);
+            string colorIndexStr = ConsoleHelpers.ReadLine();
+            int colorIndex = int.TryParse(colorIndexStr, out int result) ? result : throw new GenericException("Invalid integer");
+            switch (colorIndex)
+            {
+                case 0:
+                    BackgroundColor = Color.Black;
+                    ForegroundColor = Color.White;
+                    break;
+                case 1:
+                    BackgroundColor = Color.Blue;
+                    ForegroundColor = Color.Orange;
+                    break;
+                default:
+                    throw new GenericException("Invalid Color");
+            }
+
+            ConsoleHelpers.ClearConsole();
+        }
         public static int ScreenHeight
         {
             get => _screenHeight;
