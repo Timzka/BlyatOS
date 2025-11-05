@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using BlyatOS.Library.Helpers;
 using Cosmos.System.Graphics;
@@ -32,29 +33,7 @@ namespace BlyatOS.Library.Configs
             }
         }
 
-        public static void ChangeColorSet()
-        {
-            ConsoleHelpers.WriteLine($"Choose a Color", Color.Yellow);
-            ConsoleHelpers.WriteLine("0. Black / White", Color.White);
-            ConsoleHelpers.WriteLine("1. Blue / Orange", Color.Orange);
-            string colorIndexStr = ConsoleHelpers.ReadLine();
-            int colorIndex = int.TryParse(colorIndexStr, out int result) ? result : throw new GenericException("Invalid integer");
-            switch (colorIndex)
-            {
-                case 0:
-                    BackgroundColor = Color.Black;
-                    ForegroundColor = Color.White;
-                    break;
-                case 1:
-                    BackgroundColor = Color.Blue;
-                    ForegroundColor = Color.Orange;
-                    break;
-                default:
-                    throw new GenericException("Invalid Color");
-            }
 
-            ConsoleHelpers.ClearConsole();
-        }
         public static int ScreenHeight
         {
             get => _screenHeight;
@@ -130,7 +109,7 @@ namespace BlyatOS.Library.Configs
                     _canvas = FullScreenCanvas.GetFullScreenCanvas(mode);
                     _canvas.Clear(_backgroundColor);
                     _canvas.Display();
-                    
+
                     // Initialize default font if not already set
                     if (_font == null)
                         _font = PCScreenFont.Default;
@@ -144,8 +123,8 @@ namespace BlyatOS.Library.Configs
                 }
             }
         }
-        
-        
+
+
         // Apply new display settings
         public static void ApplyDisplaySettings(int width, int height, ColorDepth depth)
         {
@@ -154,14 +133,14 @@ namespace BlyatOS.Library.Configs
                 _screenWidth = width;
                 _screenHeight = height;
                 _colorDepth = depth;
-                
+
                 // Reinitialize graphics with new settings
                 if (_canvas != null)
                 {
                     _canvas.Disable();
                     _canvas = null;
                 }
-                
+
                 InitializeGraphics();
             }
         }
@@ -174,5 +153,53 @@ namespace BlyatOS.Library.Configs
         {
             return new Pen(_foregroundColor);
         }
+
+        public static void ChangeColorSet()
+        {
+            ConsoleHelpers.WriteLine($"Choose a Color --> Background / Foreground", Color.Yellow);
+            for (int i = 0; i < ColorSets.Count; i++)
+            {
+                var set = ColorSets[i];
+                ConsoleHelpers.WriteLine($"{i}. {set.BackgroundColor} / {set.ForegroundColor}", set.ForegroundColor, set.BackgroundColor);
+            }
+            string colorIndexStr = ConsoleHelpers.ReadLine();
+            int colorIndex = int.TryParse(colorIndexStr, out int result) ? result : throw new GenericException("Invalid integer");
+
+            BackgroundColor = ColorSets[colorIndex].BackgroundColor;
+            ForegroundColor = ColorSets[colorIndex].ForegroundColor;
+
+            ConsoleHelpers.ClearConsole();
+        }
+
+        private static readonly List<Colorset> ColorSets = new()
+        {
+            new Colorset(Color.Black, Color.White),       // 0
+            new Colorset(Color.Blue, Color.Orange),       // 1
+            new Colorset(Color.DarkGreen, Color.LightGreen), // 2
+            new Colorset(Color.DarkBlue, Color.LightCyan),   // 3
+            new Colorset(Color.DarkRed, Color.Pink),         // 4
+            new Colorset(Color.DarkMagenta, Color.Yellow),   // 5
+            new Colorset(Color.Gray, Color.Black),           // 6
+            new Colorset(Color.DarkCyan, Color.White),       // 7
+            new Colorset(Color.DarkGoldenrod, Color.DarkRed),   // 8
+            new Colorset(Color.White, Color.Black),          // 9
+            new Colorset(Color.Cyan, Color.DarkBlue),        // 10
+            new Colorset(Color.Green, Color.DarkGreen),      // 11
+            new Colorset(Color.Magenta, Color.LightPink),    // 12
+            new Colorset(Color.Orange, Color.DarkBlue),      // 13
+            new Colorset(Color.Brown, Color.LightYellow)     // 14
+        };
+    }
+
+    public class Colorset
+    {
+        public Color BackgroundColor { get; set; }
+        public Color ForegroundColor { get; set; }
+        public Colorset(Color background, Color foreground)
+        {
+            BackgroundColor = background;
+            ForegroundColor = foreground;
+        }
     }
 }
+

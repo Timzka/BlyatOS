@@ -74,6 +74,7 @@ public class BasicFunctions
                     new Commands("findkusche [filename]", "finds a file for you, giving you its path on any disk and any directory, example: \"findkusche kudzu.txt\""),
                     new Commands("fsinfo", "get information about the file system"),
                     new Commands("mkdir [name]", "create a new directory with [name]"),
+                    new Commands("rmdir [name]" , "delete a directory with [name] in currentpath with everything in it, there is no safety at the moment!"),
                     new Commands("touch [filename]", "create a new file with [name], if no ending is given, it will automatically assume .blyat"),
                     new Commands("delfile [filename]", "delete a file with [filename] in currentpath, there is no safety at the moment!"),
                     new Commands("readfile | cat [file]", "read a file, if it is an image, display it, else write the text. if root isnt given, go from currentpath"),

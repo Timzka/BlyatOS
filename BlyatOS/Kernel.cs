@@ -81,10 +81,7 @@ public class Kernel : Sys.Kernel
         {
             // Handle login if not already logged in
 
-            if (!Logged_In)
-            {
-                HandleLogin();
-            }
+            
 
             if (LOCKED)
             {
@@ -104,6 +101,10 @@ public class Kernel : Sys.Kernel
                 Global.PIT.Wait(1000);
             }
 
+            if (!Logged_In)
+                        {
+                            HandleLogin();
+                        }
             // Verzeichnislisten immer aktuell holen
             string[] dirs = fsh.GetDirectories(CurrentDirectory);
             string[] files = fsh.GetFiles(CurrentDirectory);
@@ -148,10 +149,9 @@ public class Kernel : Sys.Kernel
                             DisplaySettings.ChangeColorSet();
                             break;
                         }
-                    case "rmsys":
+                    case "rmdir":
                         {
-                            string path = @"0:\BlyatOS";
-                            VFSManager.DeleteDirectory(path, true);
+                            FileFunctions.DeleteDirectory(CurrentDirectory, commandArgs[0]);
                             break;
                         }
                     case "initsystem":
@@ -220,48 +220,19 @@ public class Kernel : Sys.Kernel
                         }
                     case "fsinfo":
                         {
-                            var disks = fs.Disks;
-                            foreach (var disk in disks)
-                            {
-                                if (disk?.Host == null)
-                                {
-                                    ConsoleHelpers.WriteLine("Disk host unavailable");
-                                    continue;
-                                }
-
-                                ConsoleHelpers.WriteLine(fsh.BlockDeviceTypeToString(disk.Host.Type));
-
-                                foreach (var partition in disk.Partitions)
-                                {
-                                    ConsoleHelpers.WriteLine($"{partition.Host}");
-                                    ConsoleHelpers.WriteLine(partition.RootPath);
-                                    ConsoleHelpers.WriteLine($"{partition.MountedFS.Size}");
-                                }
-                            }
+                            FileFunctions.FsInfo(fs, fsh);
                             break;
                         }
 
                     case "dir":
                         {
-                            foreach (var d in dirs)
-                            {
-                                ConsoleHelpers.WriteLine(TrimPath(d) + "/");
-                            }
+                            FileFunctions.ListDirectories(dirs);
                             break;
                         }
 
                     case "ls":
                         {
-                            const string dirMarker = "[D]";
-                            const string fileMarker = "[F]";
-                            foreach (var d in dirs)
-                            {
-                                ConsoleHelpers.WriteLine($"{dirMarker} {TrimPath(d)}/", Color.Cyan);
-                            }
-                            foreach (var f in files)
-                            {
-                                ConsoleHelpers.WriteLine($"{fileMarker} {TrimPath(f)}", Color.Gray);
-                            }
+                            FileFunctions.ListAll(dirs, files);
                             break;
                         }
 
@@ -271,10 +242,7 @@ public class Kernel : Sys.Kernel
                             {
                                 throw new GenericException("Usage: mkdir <name>");
                             }
-                            var name = commandArgs[0];
-                            var path = PathCombine(CurrentDirectory, name);
-                            Directory.CreateDirectory(path);
-                            ConsoleHelpers.WriteLine($"Directory '{name}' created at '{path}'");
+                            FileFunctions.MakeDirectory(CurrentDirectory, commandArgs[0]);
                             break;
                         }
 
@@ -284,23 +252,7 @@ public class Kernel : Sys.Kernel
                             {
                                 throw new GenericException("Usage: touch <name>");
                             }
-                            var name = commandArgs[0];
-
-                            if (!name.Contains('.'))
-                            {
-                                name += ".blyat";
-                            }
-                            if (name.EndsWith("."))
-                            {
-                                name += "blyat";
-                            }
-                            var path = CurrentDirectory + name;//PathCombine(CurrentDirectory, name);
-                            if (File.Exists(path))
-                            {
-                                throw new GenericException($"File '{name}' already exists at '{path}'");
-                            }
-                            fs.CreateFile(path);
-                            ConsoleHelpers.WriteLine($"File '{name}' created at '{path}'");
+                            FileFunctions.CreateFile(CurrentDirectory, commandArgs[0], fs);
                             break;
                         }
                     case "cd":
@@ -309,27 +261,8 @@ public class Kernel : Sys.Kernel
                             {
                                 throw new GenericException("Usage: cd <directory>|..");
                             }
-                            var target = commandArgs[0];
-
-                            if (target == "..")
-                            {
-                                if (IsRoot(CurrentDirectory, RootPath))
-                                {
-                                    throw new GenericException("Already at root");
-                                }
-                                CurrentDirectory = GetParent(CurrentDirectory, RootPath);
-                                ConsoleHelpers.WriteLine($"Changed directory to '{CurrentDirectory}'");
-                            }
-                            else
-                            {
-                                string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(CurrentDirectory, target);
-                                if (!fsh.DirectoryExists(newPath))
-                                {
-                                    throw new GenericException($"Directory not found: {newPath}");
-                                }
-                                CurrentDirectory = EnsureTrailingSlash(newPath);
-                                ConsoleHelpers.WriteLine($"Changed directory to '{CurrentDirectory}'");
-                            }
+                            CurrentDirectory = EnsureTrailingSlash(FileFunctions.ChangeDirectory(CurrentDirectory, RootPath, commandArgs[0], fsh));
+                            ConsoleHelpers.WriteLine($"Changed directory to '{CurrentDirectory}'");
                             break;
                         }
                     case "delfile":
@@ -338,42 +271,18 @@ public class Kernel : Sys.Kernel
                             {
                                 throw new GenericException("Usage: delfile <filename>");
                             }
-
-                            var name = commandArgs[0];
-                            var path = IsAbsolute(name) ? name : PathCombine(CurrentDirectory, name);
-                            if (!File.Exists(path))
-                            {
-                                throw new GenericException($"File not found: {path}");
-                            }
-                            File.Delete(path);
-                            ConsoleHelpers.WriteLine($"File '{name}' deleted from '{path}'");
+                            FileFunctions.DeleteFile(CurrentDirectory, commandArgs[0]);
                             break;
                         }
                     case "pwd":
-                        ConsoleHelpers.WriteLine(CurrentDirectory);
-                        break;
+                        {
+                            ConsoleHelpers.WriteLine(CurrentDirectory);
+                            break;
+                        }
 
                     case "findkusche":
                         {
-                            ConsoleHelpers.ClearConsole();
-                            ConsoleHelpers.WriteLine($"=== Searching for  {args[1]}===");
-                            ConsoleHelpers.WriteLine();
-
-                            var disks = fs.Disks;
-                            foreach (var disk in disks)
-                            {
-                                if (disk?.Host == null) continue;
-
-                                ConsoleHelpers.WriteLine($"Disk Type: {fsh.BlockDeviceTypeToString(disk.Host.Type)}");
-
-                                foreach (var partition in disk.Partitions)
-                                {
-                                    ConsoleHelpers.WriteLine($"  Checking: {partition.RootPath}");
-                                    SearchFileRecursive(partition.RootPath, args[1]);
-                                }
-                            }
-
-                            ConsoleHelpers.WriteLine();
+                            FileFunctions.FindKusche(commandArgs[0], fs, fsh);
                             break;
                         }
                     case "cat":
@@ -383,170 +292,14 @@ public class Kernel : Sys.Kernel
                             {
                                 throw new GenericException("Usage: readfile <path>");
                             }
-
-                            string path = IsAbsolute(commandArgs[0])
-                                ? commandArgs[0]
-                                : PathCombine(CurrentDirectory, commandArgs[0]).TrimEnd('\\');
-
-                            if (!File.Exists(path))
-                            {
-                                throw new GenericException($"File not found: {path}");
-                            }
-
-                            if (path.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
-                            {
-                                ReadDisplay.DisplayBitmap(path);
-                            }
-                            else
-                            {
-                                // For small files, read all at once
-                                if (new FileInfo(path).Length < 1024 * 1024) // 1MB
-                                {
-                                    ConsoleHelpers.WriteLine(ReadDisplay.ReadTextFile(path));
-                                }
-                                else
-                                {
-                                    // For larger files, read in chunks
-                                    ReadDisplay.ReadTextFileInChunks(path);
-                                }
-                            }
+                            FileFunctions.ReadFile(commandArgs[0], CurrentDirectory);
                             break;
                         }
                     case "write":
                         {
                             if (commandArgs.Count < 3)
                                 throw new GenericException("Usage: write <mode> <filename> <content>");
-
-                            string modeToken = commandArgs[0].ToLower();
-                            string filename = commandArgs[1];
-                            string content = string.Join(" ", commandArgs.Skip(2));
-                            if (content[0] == '"' && content[^1] == '"')
-                            {
-                                content = content[1..^1];
-                            }
-                            else if (content.Contains(" "))
-                            {
-                                throw new GenericException("Usage: write <mode> <filename> <content>");
-                            }
-                            string mode = modeToken switch
-                            {
-                                "append" => "append",
-                                "add" => "append",
-                                "overwrite" => "overwrite",
-                                "ovr" => "overwrite",
-                                _ => throw new GenericException($"Unknown write mode '{modeToken}'. Use append|add or overwrite|ovr.")
-                            };
-
-                            // Build absolute path (avoid trailing slash)
-                            string path = IsAbsolute(filename) ? filename : PathCombine(CurrentDirectory, filename);
-                            if (path.EndsWith("\\") || path.EndsWith("/"))
-                                path = path.TrimEnd('\\', '/');
-
-                            try
-                            {
-                                // Ensure file exists
-                                if (!VFSManager.FileExists(path))
-                                {
-                                    VFSManager.CreateFile(path);
-                                }
-
-                                var vfsFile = VFSManager.GetFile(path);
-                                var stream = vfsFile.GetFileStream();
-
-                                if (!stream.CanWrite)
-                                    throw new GenericException($"Stream not writable for '{path}'", "write", "filesystem");
-                                string toWrite = ConsoleHelpers.ProcessEscapeSequences(content);
-                                byte[] bytes = Encoding.ASCII.GetBytes(toWrite);
-
-                                if (mode == "overwrite")
-                                {
-                                    // Truncate: recreate simple by setting Position=0 and (if supported) Length=0.
-                                    // If Length set is not implemented, delete & recreate.
-                                    try
-                                    {
-                                        stream.Position = 0;
-                                        // Some Cosmos versions allow setting length:
-                                        if (stream.CanSeek)
-                                        {
-                                            // Attempt truncate by writing zero length (if SetLength exists)
-                                            if (stream.Length > 0)
-                                            {
-                                                // If SetLength not available, fall back to delete-recreate
-                                                bool setLengthWorked = true;
-                                                try { stream.SetLength(0); }
-                                                catch { setLengthWorked = false; }
-                                                if (!setLengthWorked)
-                                                {
-                                                    stream.Close();
-                                                    VFSManager.DeleteFile(path);
-                                                    VFSManager.CreateFile(path);
-                                                    vfsFile = VFSManager.GetFile(path);
-                                                    stream = vfsFile.GetFileStream();
-                                                }
-                                            }
-                                        }
-                                    }
-                                    catch
-                                    {
-                                        stream.Close();
-                                        VFSManager.DeleteFile(path);
-                                        VFSManager.CreateFile(path);
-                                        vfsFile = VFSManager.GetFile(path);
-                                        stream = vfsFile.GetFileStream();
-                                    }
-
-                                    stream.Write(bytes, 0, bytes.Length);
-                                }
-                                else // append
-                                {
-                                    if (stream.CanSeek)
-                                    {
-                                        stream.Seek(0, SeekOrigin.End);
-                                        stream.Write(bytes, 0, bytes.Length);
-                                    }
-                                    else
-                                    {
-                                        // Fallback: read existing, then rewrite whole file
-                                        byte[] existing;
-                                        if (stream.CanRead)
-                                        {
-                                            stream.Position = 0;
-                                            existing = new byte[stream.Length];
-                                            stream.Read(existing, 0, existing.Length);
-                                        }
-                                        else
-                                        {
-                                            existing = Array.Empty<byte>();
-                                        }
-
-                                        byte[] combined = new byte[existing.Length + bytes.Length];
-                                        existing.CopyTo(combined, 0);
-                                        bytes.CopyTo(combined, existing.Length);
-
-                                        stream.Close();
-                                        VFSManager.DeleteFile(path);
-                                        VFSManager.CreateFile(path);
-                                        vfsFile = VFSManager.GetFile(path);
-                                        stream = vfsFile.GetFileStream();
-                                        stream.Write(combined, 0, combined.Length);
-                                    }
-                                }
-
-                                stream.Close();
-
-                                ConsoleHelpers.WriteLine(mode == "append"
-                                    ? $"Appended {bytes.Length} bytes to '{filename}'"
-                                    : $"Overwrote '{filename}' with {bytes.Length} bytes");
-                            }
-                            catch (GenericException)
-                            {
-                                throw;
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new GenericException($"Write failed: {ex.Message}", "write", "filesystem");
-                            }
-
+                            FileFunctions.WriteFile(CurrentDirectory, commandArgs);
                             break;
                         }
                         case "neofetch":
@@ -590,7 +343,7 @@ public class Kernel : Sys.Kernel
 
             if (user != null && user.Password == password) // In a real system, use proper password hashing!
             {
-                CurrentUser = UsersConf.Users.IndexOf(user);
+                CurrentUser = user.UId;
                 Logged_In = true;
                 ConsoleHelpers.WriteLine("\nLogin successful!\n", Color.Green);
                 Global.PIT.Wait(500);
