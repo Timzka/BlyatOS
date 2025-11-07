@@ -28,8 +28,6 @@ namespace BlyatOS.Library.Helpers
             }
         }
 
-        private static Color DefaultForeground => DisplaySettings.ForegroundColor;
-        private static Color DefaultBackground => DisplaySettings.BackgroundColor;
 
         private static int _cursorX;
         private static int _cursorY;
@@ -54,8 +52,9 @@ namespace BlyatOS.Library.Helpers
                 var canvas = DisplaySettings.Canvas;
                 if (canvas == null) return;
 
-                canvas.Clear(DefaultBackground);
+                canvas.Clear(DisplaySettings.BackgroundColor);
                 canvas.Display();
+                Console.Clear();
 
                 _cursorX = 0;
                 _cursorY = 0;
@@ -147,8 +146,8 @@ namespace BlyatOS.Library.Helpers
                         px + (text.Length * font.Width) <= DisplaySettings.ScreenWidth &&
                         py + font.Height <= DisplaySettings.ScreenHeight)
                     {
-                        var pen = new Pen(currentChar.Foreground);
-                        var bgPen = new Pen(currentChar.Background);
+                        var pen = DisplaySettings.GetPen(currentChar.Foreground);
+                        var bgPen = DisplaySettings.GetPen(currentChar.Background);
 
                         canvas.DrawFilledRectangle(bgPen, px, py, text.Length * font.Width, font.Height);
                         canvas.DrawString(text, font, pen, px, py);
@@ -171,7 +170,7 @@ namespace BlyatOS.Library.Helpers
             try
             {
                 _isRedrawing = true;
-                canvas.Clear(DefaultBackground);
+                canvas.Clear(DisplaySettings.BackgroundColor);
 
                 int screenY = 0;
                 int startLine = _scrollOffset;
@@ -230,8 +229,8 @@ namespace BlyatOS.Library.Helpers
             try
             {
                 string message = "[Press any key to Continue...]";
-                var greenPen = new Pen(Color.Green);
-                var bgPen = new Pen(DefaultBackground);
+                var greenPen = DisplaySettings.GetPen(Color.Green);
+                var bgPen = DisplaySettings.GetBackgroundPen();
 
                 int messageY = MaxHeight * font.Height;
                 int messageX = 0;
@@ -341,8 +340,8 @@ namespace BlyatOS.Library.Helpers
             var font = DisplaySettings.Font;
             if (canvas == null || font == null) return;
 
-            var fg = foreground ?? DefaultForeground;
-            var bg = background ?? DefaultBackground;
+            var fg = foreground ?? DisplaySettings.ForegroundColor;
+            var bg = background ?? DisplaySettings.BackgroundColor;
 
             try
             {
@@ -382,8 +381,8 @@ namespace BlyatOS.Library.Helpers
                         px + font.Width <= DisplaySettings.ScreenWidth &&
                         py + font.Height <= DisplaySettings.ScreenHeight)
                     {
-                        var pen = new Pen(fg);
-                        var bgPen = new Pen(bg);
+                        var pen = DisplaySettings.GetPen(fg);
+                        var bgPen = DisplaySettings.GetPen(bg);
                         canvas.DrawFilledRectangle(bgPen, px, py, font.Width, font.Height);
                         canvas.DrawString(c.ToString(), font, pen, px, py);
                         if (batchMode)
@@ -453,8 +452,8 @@ namespace BlyatOS.Library.Helpers
             var input = new StringBuilder();
             var canvas = DisplaySettings.Canvas;
             var font = DisplaySettings.Font;
-            var pen = new Pen(DefaultForeground);
-            var bgPen = new Pen(DefaultBackground);
+            var pen = DisplaySettings.GetForegroundPen();
+            var bgPen = DisplaySettings.GetBackgroundPen();
 
             bool done = false;
             while (!done)
@@ -524,8 +523,8 @@ namespace BlyatOS.Library.Helpers
             var password = new StringBuilder();
             var canvas = DisplaySettings.Canvas;
             var font = DisplaySettings.Font;
-            var pen = new Pen(DefaultForeground);
-            var bgPen = new Pen(DefaultBackground);
+            var pen = DisplaySettings.GetForegroundPen();
+            var bgPen = DisplaySettings.GetBackgroundPen();
 
             bool done = false;
             while (!done)
