@@ -18,6 +18,7 @@ using Cosmos.System.FileSystem.VFS;
 using Cosmos.System.Graphics;
 using System.Drawing;
 using BlyatOS.Library.Helpers;
+using Cosmos.Core.Memory;
 
 namespace BlyatOS;
 
@@ -49,6 +50,7 @@ public class Kernel : Sys.Kernel
 
     protected override void BeforeRun()
     {
+
         // Initialize display settings and graphics1024x768
         DisplaySettings.ScreenWidth = 1024;
         DisplaySettings.ScreenHeight = 768;
@@ -56,7 +58,22 @@ public class Kernel : Sys.Kernel
         InitializeGraphics();
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
-        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
+        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs); if (LOCKED)
+        {
+            ConsoleHelpers.WriteLine("WARNING: System is locked!", Color.Red);
+            ConsoleHelpers.WriteLine("Some system files are missing or corrupted.", Color.Yellow);
+            ConsoleHelpers.WriteLine("Running system initialization...\n", Color.White);
+
+            if (InitSystem.InitSystemData(SYSTEMPATH, fs))
+            {
+                ConsoleHelpers.WriteLine("System initialized successfully!", Color.Green);
+                ConsoleHelpers.WriteLine("Press any key to reboot...", Color.White);
+                ConsoleHelpers.ReadKey();
+                Cosmos.System.Power.Reboot();
+            }
+            LOCKED = false;
+            Global.PIT.Wait(1000);
+        }
         Global.PIT.Wait(10);
 
         OnStartUp.RunLoadingScreenThing();
@@ -82,34 +99,16 @@ public class Kernel : Sys.Kernel
 
             
 
-            if (LOCKED)
-            {
-                ConsoleHelpers.WriteLine("WARNING: System is locked!", Color.Red);
-                ConsoleHelpers.WriteLine("Some system files are missing or corrupted.", Color.Yellow);
-                ConsoleHelpers.WriteLine("Running system initialization...\n", Color.White);
-
-                // TODO: Uncomment and implement actual system initialization
-                //if (InitSystem.InitSystemData(SYSTEMPATH, fs))
-                //{
-                //    ConsoleHelpers.WriteLine("System initialized successfully!", Color.Green);
-                //    ConsoleHelpers.WriteLine("Press any key to reboot...", Color.White);
-                //    ConsoleHelpers.ReadKey();
-                //    Cosmos.System.Power.Reboot();
-                //}
-                LOCKED = false;
-                Global.PIT.Wait(1000);
-            }
-
             if (!Logged_In)
-                        {
-                            HandleLogin();
-                        }
-            // Verzeichnislisten immer aktuell holen
-            string[] dirs = fsh.GetDirectories(CurrentDirectory);
-            string[] files = fsh.GetFiles(CurrentDirectory);
+            {
+                HandleLogin();
+            }
+            // Verzeichnislisten nur einmal pro Command-Loop holen
+            string[] dirs = null;
+            string[] files = null;
 
-            // Display current directory and prompt
-            string prompt = $"{CurrentDirectory}> ";
+            // Display current directory and prompt - avoid string interpolation
+            string prompt = CurrentDirectory + "> ";
             var input = ConsoleHelpers.ReadLine(prompt);
 
             if (string.IsNullOrWhiteSpace(input))
@@ -143,9 +142,35 @@ public class Kernel : Sys.Kernel
                             BasicFunctions.Help(page, BasicFunctions.ListType.Main);
                             break;
                         }
+                    case "memtest":
+                        {
+                            // Lazy load directory listings only when needed
+                            if (dirs == null) dirs = fsh.GetDirectories(CurrentDirectory);
+                            if (files == null) files = fsh.GetFiles(CurrentDirectory);
+
+                            for (int m = 0; m < 30; m++)
+                            {
+                                FileFunctions.ListAll(dirs, files);
+                            }
+                            break;
+                        }
                     case "changecolor":
                         {
                             DisplaySettings.ChangeColorSet();
+                            break;
+                        }
+                    case "meminfo":
+                        {
+                            // Get RAM values (returns uint, not ulong)
+                            uint usedRAM = Cosmos.Core.GCImplementation.GetUsedRAM();
+                            ulong availableRAM = Cosmos.Core.GCImplementation.GetAvailableRAM();
+
+                            // Use single WriteLine to minimize allocations
+                            ConsoleHelpers.Write("Used RAM: ", Color.Cyan);
+                            ConsoleHelpers.Write((usedRAM / 1000000).ToString(), Color.White);
+                            ConsoleHelpers.Write(" MB / ", Color.Cyan);
+                            ConsoleHelpers.Write(availableRAM.ToString(), Color.White);
+                            ConsoleHelpers.WriteLine(" MB", Color.Cyan);
                             break;
                         }
                     case "rmdir":
@@ -225,12 +250,19 @@ public class Kernel : Sys.Kernel
 
                     case "dir":
                         {
+                            // Lazy load directory listings only when needed
+                            if (dirs == null) dirs = fsh.GetDirectories(CurrentDirectory);
+
                             FileFunctions.ListDirectories(dirs);
                             break;
                         }
 
                     case "ls":
                         {
+                            // Lazy load directory listings only when needed
+                            if (dirs == null) dirs = fsh.GetDirectories(CurrentDirectory);
+                            if (files == null) files = fsh.GetFiles(CurrentDirectory);
+
                             FileFunctions.ListAll(dirs, files);
                             break;
                         }
@@ -301,16 +333,27 @@ public class Kernel : Sys.Kernel
                             FileFunctions.WriteFile(CurrentDirectory, commandArgs);
                             break;
                         }
-                        case "neofetch":
-                            {
-                                Neofetch.Show(VersionInfo, MomentOfStart, UsersConf, CurrentUser, CurrentDirectory, fs);
-                                break;
-                            }
+                    case "neofetch":
+                        {
+                            Neofetch.Show(VersionInfo, MomentOfStart, UsersConf, CurrentUser, CurrentDirectory, fs);
+                            break;
+                        }
 
                     default:
                         throw new GenericException($"Unknown command '{command}'! Type \"help\" for help or \"exit\" to return!");
                 }
+
+                // Clear commandArgs after each command to free memory
+                commandArgs.Clear();
+
+                // Aggressive GC after each command (NclearOS 2 pattern)
+                Heap.Collect();
             }
+
+            // Explicitly clear arrays to help GC
+            dirs = null;
+            files = null;
+            args = null;
 
         }
         catch (GenericException ex)
