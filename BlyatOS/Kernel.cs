@@ -41,7 +41,7 @@ public class Kernel : Sys.Kernel
 
 
 
-    private bool LOCKED; //if system isnt complete, lock system, make user run an INIT command
+    private bool LOCKED; //if system isnt complete, lock system, make user run INIT
 
     public static void InitializeGraphics()
     {
@@ -84,7 +84,7 @@ public class Kernel : Sys.Kernel
 
         // Clear the console and display welcome message
         ConsoleHelpers.ClearConsole();
-        ConsoleHelpers.WriteLine($"BlyatOS v{VersionInfo}", Color.Cyan);
+        ConsoleHelpers.WriteLine("BlyatOS v" + VersionInfo, Color.Cyan);
         ConsoleHelpers.WriteLine("Type 'help' for a list of commands\n", Color.White);
 
         MomentOfStart = DateTime.Now;
@@ -293,7 +293,7 @@ public class Kernel : Sys.Kernel
                                 throw new GenericException("Usage: cd <directory>|..");
                             }
                             CurrentDirectory = EnsureTrailingSlash(FileFunctions.ChangeDirectory(CurrentDirectory, RootPath, commandArgs[0], fsh));
-                            ConsoleHelpers.WriteLine($"Changed directory to '{CurrentDirectory}'");
+                            ConsoleHelpers.WriteLine($"Changed directory to '" + CurrentDirectory + "'");
                             break;
                         }
                     case "delfile":
@@ -340,7 +340,7 @@ public class Kernel : Sys.Kernel
                         }
 
                     default:
-                        throw new GenericException($"Unknown command '{command}'! Type \"help\" for help or \"exit\" to return!");
+                        throw new GenericException($"Unknown command '" + command + "'! Type \"help\" for help or \"exit\" to return!");
                 }
 
                 // Clear commandArgs after each command to free memory
@@ -359,7 +359,7 @@ public class Kernel : Sys.Kernel
         catch (GenericException ex)
         {
             ConsoleHelpers.WriteLine();
-            ConsoleHelpers.WriteLine($"Message: {ex.EMessage}" + (ex.Label != "" ? $",\nLabel: {ex.Label}" : "") + (ex.ComesFrom != "" ? $",\nSource: {ex.ComesFrom}" : ""));
+            ConsoleHelpers.WriteLine($"Message: " + ex.EMessage + (ex.Label != "" ? $",\nLabel: " + ex.Label : "") + (ex.ComesFrom != "" ? $",\nSource: " + ex.ComesFrom : ""));
             ConsoleHelpers.WriteLine();
         }
         catch (Exception ex)

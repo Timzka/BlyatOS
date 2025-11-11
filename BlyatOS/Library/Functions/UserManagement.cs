@@ -56,7 +56,7 @@ internal class UserManagement
 
         foreach (var id in validIds)
         {
-            ConsoleHelpers.WriteLine($"{id}");
+            ConsoleHelpers.WriteLine(id.ToString());
         }
 
         ConsoleHelpers.WriteLine("Enter the ID of the user you want to delete: ");
@@ -74,7 +74,7 @@ internal class UserManagement
         else
         {
             conf.Users.RemoveAll(u => u.UId == idToDelete);
-            ConsoleHelpers.WriteLine($"User with ID {idToDelete} deleted.");
+            ConsoleHelpers.WriteLine($"User with ID " + idToDelete + "'");
         }
     }
     public static void CreateUser(UsersConfig conf, int currUser) //Kreiert einen Nutzer
@@ -88,7 +88,7 @@ internal class UserManagement
         }
         ConsoleHelpers.WriteLine("Enter password: ");
         string password = ConsoleHelpers.ReadLine();
-        ConsoleHelpers.WriteLine($"Enter role (0 - User{(CheckPermissions(currUser, conf, Permissions.SuperAdmin) ? ", 1 - Admin" : "")}): ");
+        ConsoleHelpers.WriteLine("Enter role (0 - User"+(CheckPermissions(currUser, conf, Permissions.SuperAdmin) ? ", 1 - Admin" : "") + ")");
         string roleInput = ConsoleHelpers.ReadLine();
         int[] validRolesToCreate = GetValidRoles(currUser,conf);
         if (!int.TryParse(roleInput, out int roleInt))
@@ -109,7 +109,7 @@ internal class UserManagement
             newId++;
         }
         conf.Users.Add(new UsersConfig.User(uName, newId, password, role));
-        ConsoleHelpers.WriteLine($"User {uName} created with ID {newId} and role {RoleToString(role)}"); //role.Tostring geht nicht
+        ConsoleHelpers.WriteLine($"User "+uName+" created with ID "+newId+" and role "+RoleToString(role)); //role.Tostring geht nicht
     }
 
     static string RoleToString(URoles role)

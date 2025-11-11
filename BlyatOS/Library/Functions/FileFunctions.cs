@@ -21,7 +21,7 @@ namespace BlyatOS.Library.Functions
             char[] invalidChars = Path.GetInvalidFileNameChars();
             if (name.IndexOfAny(invalidChars) >= 0)
             {
-                throw new GenericException($"Invalid characters in file name: {name}");
+                throw new GenericException("Invalid characters in file name: " + name);
             }
             string fileNameOnly = Path.GetFileName(name);
 
@@ -29,49 +29,64 @@ namespace BlyatOS.Library.Functions
 
             if (baseName.Length <= 3)
             {
-                throw new GenericException($"File name '{baseName}' is too short. Must be longer than 3 characters.");
+                throw new GenericException("File name '" + baseName + "' is too short. Must be longer than 3 characters.");
             }
         }
 
         public static void ListDirectories(string[] dirs)
         {
+            var sb = new StringBuilder(128);
             foreach (var d in dirs)
             {
-                ConsoleHelpers.WriteLine(TrimPath(d) + "/");
+                sb.Clear();
+                sb.Append(TrimPath(d));
+                sb.Append("/");
+                ConsoleHelpers.WriteLine(sb.ToString());
             }
+            sb.Clear(); // StringBuilder aufräumen
         }
 
-        public static void ListAll( string[] dirs, string[] files)
+        public static void ListAll(string[] dirs, string[] files)
         {
-            const string dirMarker = "[D]";
-            const string fileMarker = "[F]";
+            var sb = new StringBuilder(128);
+
             foreach (var d in dirs)
             {
-                ConsoleHelpers.WriteLine($"{dirMarker} {TrimPath(d)}/", Color.Cyan);
+                sb.Clear();
+                sb.Append("[D] ");
+                sb.Append(TrimPath(d));
+                sb.Append("/");
+                ConsoleHelpers.WriteLine(sb.ToString(), Color.Cyan);
             }
             foreach (var f in files)
             {
-                ConsoleHelpers.WriteLine($"{fileMarker} {TrimPath(f)}", Color.Gray);
+                sb.Clear();
+                sb.Append("[F] ");
+                sb.Append(TrimPath(f));
+                ConsoleHelpers.WriteLine(sb.ToString(), Color.Gray);
             }
+
+            // StringBuilder aufräumen
+            sb.Clear();
         }
 
         public static void MakeDirectory(string CurrentDirectory, string name)
         {
             var path = PathCombine(CurrentDirectory, name);
             Directory.CreateDirectory(path);
-            if(Directory.Exists(path))
+            if (Directory.Exists(path))
             {
-                throw new GenericException($"Directory '{name}' already exists at '{path}'");
+                throw new GenericException("Directory '" + name + "' already exists at '" + path + "'");
             }
-            ConsoleHelpers.WriteLine($"Directory '{name}' created at '{path}'");
+            ConsoleHelpers.WriteLine("Directory '" + name + "' created at '" + path + "'");
         }
 
         public static void DeleteDirectory(string CurrentDirectory, string name)
         {
             string path = PathCombine(CurrentDirectory, name);
-            if(!Directory.Exists(path))
+            if (!Directory.Exists(path))
             {
-                throw new GenericException($"Directory not found: {path}");
+                throw new GenericException("Directory not found: " + path);
             }
             VFSManager.DeleteDirectory(path, true);
         }
@@ -89,13 +104,13 @@ namespace BlyatOS.Library.Functions
             }
             string path = IsAbsolute(name) ? name : PathCombine(CurrentDirectory, name);
             if (path.EndsWith("\\") || path.EndsWith("/"))
-            path = path.TrimEnd('\\', '/');
+                path = path.TrimEnd('\\', '/');
             if (File.Exists(path))
             {
-                throw new GenericException($"File '{name}' already exists at '{path}'");
+                throw new GenericException("File '" + name + "' already exists at '" + path + "'");
             }
             VFSManager.CreateFile(path);
-            ConsoleHelpers.WriteLine($"File '{name}' created at '{path}'");
+            ConsoleHelpers.WriteLine("File '" + name + "' created at '" + path + "'");
         }
 
         public static string ChangeDirectory(string CurrentDirectory, string RootPath, string target, FileSystemHelpers fsh)
@@ -114,7 +129,7 @@ namespace BlyatOS.Library.Functions
                 string newPath = IsAbsolute(target) ? EnsureTrailingSlash(target) : PathCombine(CurrentDirectory, target);
                 if (!fsh.DirectoryExists(newPath))
                 {
-                    throw new GenericException($"Directory not found: {newPath}");
+                    throw new GenericException("Directory not found: " + newPath);
                 }
                 return newPath;
             }
@@ -128,7 +143,7 @@ namespace BlyatOS.Library.Functions
 
             if (!File.Exists(path))
             {
-                throw new GenericException($"File not found: {path}");
+                throw new GenericException("File not found: " + path);
             }
 
             if (path.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
@@ -153,7 +168,7 @@ namespace BlyatOS.Library.Functions
         public static void FindKusche(string filename, CosmosVFS fs, FileSystemHelpers fsh)
         {
             ConsoleHelpers.ClearConsole();
-            ConsoleHelpers.WriteLine($"=== Searching for  {filename}===");
+            ConsoleHelpers.WriteLine("=== Searching for  " + filename + "===");
             ConsoleHelpers.WriteLine();
 
             var disks = fs.Disks;
@@ -161,11 +176,11 @@ namespace BlyatOS.Library.Functions
             {
                 if (disk?.Host == null) continue;
 
-                ConsoleHelpers.WriteLine($"Disk Type: {fsh.BlockDeviceTypeToString(disk.Host.Type)}");
+                ConsoleHelpers.WriteLine("Disk Type: " + fsh.BlockDeviceTypeToString(disk.Host.Type));
 
                 foreach (var partition in disk.Partitions)
                 {
-                    ConsoleHelpers.WriteLine($"  Checking: {partition.RootPath}");
+                    ConsoleHelpers.WriteLine("  Checking: " + partition.RootPath);
                     SearchFileRecursive(partition.RootPath, filename);
                 }
             }
@@ -178,10 +193,10 @@ namespace BlyatOS.Library.Functions
             var path = IsAbsolute(name) ? name : PathCombine(CurrentDirectory, name);
             if (!File.Exists(path))
             {
-                throw new GenericException($"File not found: {path}");
+                throw new GenericException("File not found: " + path);
             }
             File.Delete(path);
-            ConsoleHelpers.WriteLine($"File '{name}' deleted from '{CurrentDirectory}'");
+            ConsoleHelpers.WriteLine("File '" + name + "' deleted from '" + CurrentDirectory + "'");
         }
         public static void WriteFile(string CurrentDirectory, List<string> commandArgs)
         {
@@ -203,7 +218,7 @@ namespace BlyatOS.Library.Functions
                 "add" => "append",
                 "overwrite" => "overwrite",
                 "ovr" => "overwrite",
-                _ => throw new GenericException($"Unknown write mode '{modeToken}'. Use append|add or overwrite|ovr.")
+                _ => throw new GenericException("Unknown write mode '" + modeToken + "'. Use append|add or overwrite|ovr.")
             };
 
             // Build absolute path (avoid trailing slash)
@@ -223,7 +238,7 @@ namespace BlyatOS.Library.Functions
                 var stream = vfsFile.GetFileStream();
 
                 if (!stream.CanWrite)
-                    throw new GenericException($"Stream not writable for '{path}'", "write", "filesystem");
+                    throw new GenericException("Stream not writable for '" + path + "'", "write", "filesystem");
                 string toWrite = ConsoleHelpers.ProcessEscapeSequences(content);
                 byte[] bytes = Encoding.ASCII.GetBytes(toWrite);
 
@@ -303,9 +318,10 @@ namespace BlyatOS.Library.Functions
 
                 stream.Close();
 
-                ConsoleHelpers.WriteLine(mode == "append"
-                    ? $"Appended {bytes.Length} bytes to '{filename}'"
-                    : $"Overwrote '{filename}' with {bytes.Length} bytes");
+                string successMsg = mode == "append"
+                    ? "Appended " + bytes.Length.ToString() + " bytes to '" + filename + "'"
+                    : "Overwrote '" + filename + "' with " + bytes.Length.ToString() + " bytes";
+                ConsoleHelpers.WriteLine(successMsg);
             }
             catch (GenericException)
             {
@@ -313,7 +329,7 @@ namespace BlyatOS.Library.Functions
             }
             catch (Exception ex)
             {
-                throw new GenericException($"Write failed: {ex.Message}", "write", "filesystem");
+                throw new GenericException("Write failed: " + ex.Message, "write", "filesystem");
             }
         }
 
@@ -332,9 +348,9 @@ namespace BlyatOS.Library.Functions
 
                 foreach (var partition in disk.Partitions)
                 {
-                    ConsoleHelpers.WriteLine($"{partition.Host}");
+                    ConsoleHelpers.WriteLine(partition.Host.ToString());
                     ConsoleHelpers.WriteLine(partition.RootPath);
-                    ConsoleHelpers.WriteLine($"{partition.MountedFS.Size}");
+                    ConsoleHelpers.WriteLine(partition.MountedFS.Size.ToString());
                 }
             }
         }

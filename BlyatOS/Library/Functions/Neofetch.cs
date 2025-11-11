@@ -102,16 +102,17 @@ public static class Neofetch
                 "\\______/  \\______/                          "
             };
 
-            // Labels + Values (mit Fallback-Werten)
-            string[] labels = { "BlyatOS","User"," Users","Uptime","Directory"," Disks/Parts","CPU","   Memory" };
+            // Labels + Values (KEINE String-Interpolation mehr!)
+            string[] labels = { "BlyatOS", "User", " Users", "Uptime", "Directory", " Disks/Parts", "CPU", "   Memory" };
+            string versionStr = version ?? "0.0";
             string[] values =
             {
-                "v" + (version ?? "0.0"),
-                currentUserName + " (id " + currentUserId + ")",
+                "v" + versionStr,
+                currentUserName + " (id " + currentUserId.ToString() + ")",
                 userCount.ToString(),
                 uptime,
                 currentDirectory ?? "n/a",
-                diskCount + "/" + partitions + " (" + totalSizeMB + ")",
+                diskCount.ToString() + "/" + partitions.ToString() + " (" + totalSizeMB + ")",
                 cpuBrand,
                 memoryString
             };
@@ -190,7 +191,8 @@ public static class Neofetch
 
     private static List<string> WrapValue(string value, int maxWidth)
     {
-        List<string> result = new List<string>(); if (string.IsNullOrEmpty(value)) { result.Add(""); return result; } if (maxWidth <= 0) { result.Add(value); return result; }
+        List<string> result = new List<string>(); if (string.IsNullOrEmpty(value)) { result.Add(""); return result; }
+        if (maxWidth <= 0) { result.Add(value); return result; }
         int idx = 0; while (idx < value.Length) { int len = value.Length - idx; if (len > maxWidth) len = maxWidth; if (len == maxWidth && idx + len < value.Length) { int spacePos = LastSpace(value, idx, len); if (spacePos >= idx) len = spacePos - idx + 1; } string segment = value.Substring(idx, len).TrimEnd(); result.Add(segment); idx += len; while (idx < value.Length && value[idx] == ' ') idx++; }
         return result;
     }
@@ -200,7 +202,15 @@ public static class Neofetch
     private static int GetConsoleCharWidth() { try { return (int)(DisplaySettings.ScreenWidth / DisplaySettings.Font.Width) - 1; } catch { return 80; } }
 
     private static string FormatBytes(ulong bytes)
-    { const double KB = 1024.0; const double MB = KB * 1024.0; const double GB = MB * 1024.0; if (bytes >= GB) return (bytes / GB).ToString("0.00") + " GB"; if (bytes >= MB) return (bytes / MB).ToString("0.00") + " MB"; if (bytes >= KB) return (bytes / KB).ToString("0.00") + " KB"; return bytes + " B"; }
+    {
+        const double KB = 1024.0;
+        const double MB = KB * 1024.0;
+        const double GB = MB * 1024.0;
+        if (bytes >= GB) return (bytes / GB).ToString("0.00") + " GB";
+        if (bytes >= MB) return (bytes / MB).ToString("0.00") + " MB";
+        if (bytes >= KB) return (bytes / KB).ToString("0.00") + " KB";
+        return bytes.ToString() + " B";
+    }
 
     private static ulong SafeUlong(uint value) => value;
     private static uint SafeUInt(System.Func<uint> getter, uint fallback)

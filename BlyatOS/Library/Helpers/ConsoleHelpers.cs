@@ -80,9 +80,8 @@ namespace BlyatOS.Library.Helpers
                 _charsSinceDisplay = 0;
                 _drawCallsSinceGC = 0; // Reset GC counter
 
-                // Aggressive GC like NclearOS 2
                 int collected = Heap.Collect();
-                ConsoleHelpers.WriteLine($"[Garbage Collector] Collected {collected} objects.", Color.Gray);
+                ConsoleHelpers.WriteLine($"[Garbage Collector] Collected "+collected+" objects.", Color.Gray);//for debug
             }
             catch
             {
@@ -260,7 +259,7 @@ namespace BlyatOS.Library.Helpers
 
                 if (_cursorX >= MaxWidth)
                 {
-                    // Clear alte Zeile and release memory
+                    // Clear old line and release memory
                     _currentLine.Clear();
                     _currentLine.TrimExcess();
                     _cursorX = 0;
@@ -322,7 +321,7 @@ namespace BlyatOS.Library.Helpers
                             canvas.Display();
                             _charsSinceDisplay = 0;
 
-                            // Periodic GC to prevent buildup (NclearOS 2 pattern)
+                            // Periodic GC to prevent buildup 
                             if (_drawCallsSinceGC >= GC_THRESHOLD)
                             {
                                 Heap.Collect();

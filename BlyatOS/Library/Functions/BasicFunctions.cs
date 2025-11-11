@@ -27,7 +27,7 @@ public class BasicFunctions
 
         int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
 
-        ConsoleHelpers.WriteLine($"--- Help Page {currentPage}/{totalPages} ({GetListTypeName(listType)}) ---");
+        ConsoleHelpers.WriteLine($"--- Help Page " +currentPage +"/"+ totalPages + GetListTypeName(listType)+" ---");
         ConsoleHelpers.WriteLine($"--- | = command alias, <> = optional, [] = mandatory                   ---");
 
         var wantedCommandsPage = commands.Skip((currentPage - 1) * commandsPerPage).Take(commandsPerPage);

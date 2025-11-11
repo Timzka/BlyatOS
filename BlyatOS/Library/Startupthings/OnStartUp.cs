@@ -28,7 +28,13 @@ namespace BlyatOS.Library.Startupthings
                 "  ~       "
             };
 
-            // === Berechne Zentrierung ===
+            Pen bgPen = DisplaySettings.GetBackgroundPen();
+            Pen grayPen = DisplaySettings.GetPen(Color.Gray);
+            Pen darkGoldenrodPen = DisplaySettings.GetPen(Color.DarkGoldenrod);
+            Pen whitePen = DisplaySettings.GetPen(Color.White);
+            Pen redPen = DisplaySettings.GetPen(Color.Red);
+            Pen yellowPen = DisplaySettings.GetPen(Color.Yellow);
+
             int totalCigaretteLength = filterLength + maxLength + 10; // +10 für Rauch/Reserve
             int cigarettePixelWidth = totalCigaretteLength * font.Width;
             int cigarettePixelHeight = font.Height;
@@ -47,27 +53,26 @@ namespace BlyatOS.Library.Startupthings
                 int smokePos = filterLength + len + 2;
                 uint randTime = (uint)(50 + rand.Next(0, 250));
 
-                // === Rauch über Zigarette ===
                 int smokeY = yCigarette - 1;
                 if (smokeY >= 0)
                 {
                     int smokeStartX = startX + filterLength + len + 4;
                     int smokeWidth = 10;
 
-                    // Hintergrund löschen
+                    // Hintergrund löschen 
                     canvas.DrawFilledRectangle(
-                        new Pen(DisplaySettings.BackgroundColor),
+                        bgPen,
                         smokeStartX * font.Width,
                         smokeY * font.Height,
                         smokeWidth * font.Width,
                         font.Height
                     );
 
-                    // Rauchmuster zeichnen
+                    // Rauchmuster zeichnen 
                     canvas.DrawString(
                         smokePatterns[len % smokePatterns.Length],
                         font,
-                        new Pen(Color.Gray),
+                        grayPen,
                         smokeStartX * font.Width,
                         smokeY * font.Height
                     );
@@ -76,34 +81,34 @@ namespace BlyatOS.Library.Startupthings
                 int px = startX * font.Width;
                 int py = yCigarette * font.Height;
 
-                // Linie löschen
+                // Linie löschen 
                 canvas.DrawFilledRectangle(
-                    new Pen(DisplaySettings.BackgroundColor),
+                    bgPen,
                     px, py,
                     cigarettePixelWidth,
                     font.Height
                 );
 
-                // Filter
+                // Filter 
                 for (int i = 0; i < filterLength; i++)
-                    canvas.DrawFilledRectangle(new Pen(Color.DarkGoldenrod), (startX + i) * font.Width, py, font.Width, font.Height);
+                    canvas.DrawFilledRectangle(darkGoldenrodPen, (startX + i) * font.Width, py, font.Width, font.Height);
 
-                // Körper
+                // Körper 
                 for (int i = 0; i < len; i++)
-                    canvas.DrawFilledRectangle(new Pen(Color.White), (startX + filterLength + i) * font.Width, py, font.Width, font.Height);
+                    canvas.DrawFilledRectangle(whitePen, (startX + filterLength + i) * font.Width, py, font.Width, font.Height);
 
                 // Glühende Spitze
                 if (len > 0)
                 {
-                    Color tipColor = len % 3 == 0 ? Color.DarkGoldenrod :
-                                     len % 3 == 1 ? Color.Red : Color.Yellow;
+                    Pen tipPen = len % 3 == 0 ? darkGoldenrodPen :
+                                 len % 3 == 1 ? redPen : yellowPen;
 
-                    canvas.DrawFilledRectangle(new Pen(tipColor), (startX + filterLength + len) * font.Width, py, font.Width, font.Height);
+                    canvas.DrawFilledRectangle(tipPen, (startX + filterLength + len) * font.Width, py, font.Width, font.Height);
                 }
 
-                // Rauchspur
+                // Rauchspur 
                 string trail = "~~~~      ";
-                canvas.DrawString(trail, font, new Pen(Color.Gray), (startX + filterLength + len + 1) * font.Width, py);
+                canvas.DrawString(trail, font, grayPen, (startX + filterLength + len + 1) * font.Width, py);
 
                 canvas.Display();
                 Global.PIT.Wait(randTime);
