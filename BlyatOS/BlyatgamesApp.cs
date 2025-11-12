@@ -2,6 +2,7 @@ using BadTetrisCS;
 using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Helpers;
+using Cosmos.Core.Memory;
 using Cosmos.HAL;
 using Cosmos.System.FileSystem;
 using Cosmos.System.Graphics;
@@ -21,6 +22,7 @@ public class BlyatgamesApp
         ConsoleHelpers.WriteLine("You are now in Blyatgames, write \"mainMenu\" to go back or \"help\" for available commands");
         do
         {
+            Heap.Collect();
             ConsoleHelpers.WriteLine();
             ConsoleHelpers.Write("BlyatGames> ");
 

@@ -354,7 +354,7 @@ public class Kernel : Sys.Kernel
             dirs = null;
             files = null;
             args = null;
-
+            Heap.Collect();
         }
         catch (GenericException ex)
         {
