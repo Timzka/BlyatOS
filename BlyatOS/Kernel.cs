@@ -58,12 +58,13 @@ public class Kernel : Sys.Kernel
         InitializeGraphics();
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
-        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs); if (LOCKED)
+        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs); 
+        if (LOCKED)
         {
             ConsoleHelpers.WriteLine("WARNING: System is locked!", Color.Red);
             ConsoleHelpers.WriteLine("Some system files are missing or corrupted.", Color.Yellow);
             ConsoleHelpers.WriteLine("Running system initialization...\n", Color.White);
-
+            Global.PIT.Wait(1000);
             if (InitSystem.InitSystemData(SYSTEMPATH, fs))
             {
                 ConsoleHelpers.WriteLine("System initialized successfully!", Color.Green);
