@@ -14,7 +14,6 @@ public static class Neofetch
 
     public static void Show(string version, DateTime startTime, UsersConfig usersConfig, int currentUserId, string currentDirectory, CosmosVFS fs)
     {
-        // Grundlegende Null-Prüfungen (verhindert Crash direkt nach Boot)
         if (usersConfig == null)
         {
             SafeFallback("UsersConfig null");
@@ -28,10 +27,9 @@ public static class Neofetch
 
         try
         {
-            // Uptime (falls BasicFunctions noch nicht bereit -> Fallback)
-            string uptime = SafeString(() => BasicFunctions.RunTime(startTime), "n/a");
+            string uptime = "n/a";
+            try { uptime = BasicFunctions.RunTime(startTime); } catch { }
 
-            // User lookup ohne LINQ
             UsersConfig.User currentUser = null;
             var list = usersConfig.Users;
             if (list != null)
@@ -45,7 +43,6 @@ public static class Neofetch
             string currentUserName = currentUser != null ? currentUser.Username : "unknown";
             int userCount = list != null ? list.Count : 0;
 
-            // Disk / Partition Info (robust)
             ulong totalSize = 0;
             int partitions = 0;
             int diskCount = 0;
@@ -71,14 +68,21 @@ public static class Neofetch
             catch { }
             string totalSizeMB = totalSize == 0 ? "n/a" : (totalSize / (1024UL * 1024UL)).ToString() + " MB";
 
-            // RAM / CPU
-            string cpuBrand = SafeString(() => CPU.GetCPUBrandString(), "Unknown CPU");
-            ulong usedRamBytes = SafeUlong(SafeUInt(() => GCImplementation.GetUsedRAM(), 0));
-            ulong totalRamMB = SafeUlong(SafeUInt(() => CPU.GetAmountOfRAM(), 0));
-            ulong totalRamBytes = totalRamMB > 0 ? totalRamMB * 1024UL * 1024UL : 0;
-            string memoryString = (totalRamBytes == 0) ? "n/a" : FormatBytes(usedRamBytes) + "/" + FormatBytes(totalRamBytes);
+            string cpuBrand = "Unknown CPU";
+            try { cpuBrand = CPU.GetCPUBrandString(); } catch { }
 
-            // ASCII Art
+            ulong usedRamBytes = 0;
+            ulong totalRamBytes = 0;
+            try
+            {
+                usedRamBytes = GCImplementation.GetUsedRAM();
+                ulong totalRamMB = CPU.GetAmountOfRAM();
+                totalRamBytes = totalRamMB * 1024UL * 1024UL;
+            }
+            catch { }
+
+            string memoryString = totalRamBytes == 0 ? "n/a" : FormatBytesMatching(usedRamBytes, totalRamBytes);
+
             string[] art =
             {
                 " /$$$$$$$  /$$                       /$$      ",
@@ -102,7 +106,6 @@ public static class Neofetch
                 "\\______/  \\______/                          "
             };
 
-            // Labels + Values (KEINE String-Interpolation mehr!)
             string[] labels = { "BlyatOS", "User", " Users", "Uptime", "Directory", " Disks/Parts", "CPU", "   Memory" };
             string versionStr = version ?? "0.0";
             string[] values =
@@ -165,7 +168,6 @@ public static class Neofetch
         }
     }
 
-    // Fallback reine Text-Konsole
     private static void FallbackConsole(string[] art, string[] labels, string[] values)
     {
         int artWidth = MaxLength(art); int gap = 1; int rows = art.Length > labels.Length ? art.Length : labels.Length;
@@ -201,20 +203,29 @@ public static class Neofetch
 
     private static int GetConsoleCharWidth() { try { return (int)(DisplaySettings.ScreenWidth / DisplaySettings.Font.Width) - 1; } catch { return 80; } }
 
-    private static string FormatBytes(ulong bytes)
+    private static string FormatBytesMatching(ulong value1, ulong value2)
     {
         const double KB = 1024.0;
         const double MB = KB * 1024.0;
         const double GB = MB * 1024.0;
-        if (bytes >= GB) return (bytes / GB).ToString("0.00") + " GB";
-        if (bytes >= MB) return (bytes / MB).ToString("0.00") + " MB";
-        if (bytes >= KB) return (bytes / KB).ToString("0.00") + " KB";
-        return bytes.ToString() + " B";
-    }
 
-    private static ulong SafeUlong(uint value) => value;
-    private static uint SafeUInt(System.Func<uint> getter, uint fallback)
-    { try { return getter(); } catch { return fallback; } }
-    private static string SafeString(System.Func<string> getter, string fallback)
-    { try { var v = getter(); return string.IsNullOrEmpty(v) ? fallback : v; } catch { return fallback; } }
+        ulong larger = value2 > value1 ? value2 : value1;
+
+        if (larger >= GB)
+        {
+            return (value1 / GB).ToString("0.00") + " GB / " + (value2 / GB).ToString("0.00") + " GB";
+        }
+        else if (larger >= MB)
+        {
+            return (value1 / MB).ToString("0.00") + " MB / " + (value2 / MB).ToString("0.00") + " MB";
+        }
+        else if (larger >= KB)
+        {
+            return (value1 / KB).ToString("0.00") + " KB / " + (value2 / KB).ToString("0.00") + " KB";
+        }
+        else
+        {
+            return value1.ToString() + " B / " + value2.ToString() + " B";
+        }
+    }
 }

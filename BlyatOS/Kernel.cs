@@ -19,6 +19,7 @@ using Cosmos.System.Graphics;
 using System.Drawing;
 using BlyatOS.Library.Helpers;
 using Cosmos.Core.Memory;
+using Cosmos.System.Graphics.Fonts;
 
 namespace BlyatOS;
 

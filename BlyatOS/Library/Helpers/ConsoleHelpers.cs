@@ -60,7 +60,8 @@ namespace BlyatOS.Library.Helpers
 
                 canvas.Clear(DisplaySettings.BackgroundColor);
                 canvas.Display();
-                Console.Clear();
+
+                // KEIN Console.Clear() mehr - das verursacht möglicherweise Probleme
                 _cursorX = 0;
                 _cursorY = 0;
                 _currentLine.Clear();
@@ -84,18 +85,10 @@ namespace BlyatOS.Library.Helpers
         {
             _cursorX = Math.Max(0, Math.Min(left, MaxWidth));
             _cursorY = Math.Max(0, Math.Min(top, MaxHeight));
-            UpdateCursorPosition();
+            // KEINE Console.SetCursorPosition mehr
         }
 
-        private static void UpdateCursorPosition()
-        {
-            try
-            {
-                int clampedY = Math.Max(0, Math.Min(_cursorY, MaxHeight));
-                Console.SetCursorPosition(Math.Max(0, Math.Min(_cursorX, MaxWidth)), clampedY);
-            }
-            catch { }
-        }
+        // UpdateCursorPosition komplett entfernt - das war der Bottleneck!
 
         public static void ReadKey() => Console.ReadKey();
 
@@ -130,7 +123,8 @@ namespace BlyatOS.Library.Helpers
 
         private static void EnsureCursorVisible()
         {
-            if (_cursorY > MaxHeight - SCROLL_THRESHOLD)
+            // FIX: Nur bei ECHTER Überschreitung pauscen, nicht schon vorher
+            if (_cursorY >= MaxHeight)
                 PauseAndClear();
         }
 
@@ -218,7 +212,7 @@ namespace BlyatOS.Library.Helpers
                         canvas.Display();
                         _charsSinceDisplay = 0;
                     }
-                    UpdateCursorPosition();
+                    // KEIN UpdateCursorPosition mehr
                     return;
                 }
 
@@ -278,7 +272,7 @@ namespace BlyatOS.Library.Helpers
                 }
 
                 _cursorX++;
-                UpdateCursorPosition();
+                // KEIN UpdateCursorPosition mehr
             }
             catch
             {
@@ -347,7 +341,7 @@ namespace BlyatOS.Library.Helpers
                         _cursorX = 0;
                         _cursorY++;
                         EnsureCursorVisible();
-                        UpdateCursorPosition();
+                        // KEIN UpdateCursorPosition
                         break;
 
                     case Sys.ConsoleKeyEx.Backspace:
@@ -365,7 +359,7 @@ namespace BlyatOS.Library.Helpers
                                     _cursorY * font.Height,
                                     font.Width, font.Height);
                                 canvas.Display();
-                                UpdateCursorPosition();
+                                // KEIN UpdateCursorPosition
                             }
                         }
                         break;
@@ -414,7 +408,7 @@ namespace BlyatOS.Library.Helpers
                         _cursorX = 0;
                         _cursorY++;
                         EnsureCursorVisible();
-                        UpdateCursorPosition();
+                        // KEIN UpdateCursorPosition
                         break;
 
                     case Sys.ConsoleKeyEx.Backspace:
@@ -432,7 +426,7 @@ namespace BlyatOS.Library.Helpers
                                     _cursorY * font.Height,
                                     font.Width, font.Height);
                                 canvas.Display();
-                                UpdateCursorPosition();
+                                // KEIN UpdateCursorPosition
                             }
                         }
                         break;
