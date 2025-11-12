@@ -474,9 +474,9 @@ public class BadTetris
             if (quit) break;
             if (moved) needsRedraw = true;
 
-            gravityCounter++;
-            gravitySpeed = GRAVITY_DELAY - score / 10;
-            if (gravitySpeed < 1) gravitySpeed = 1;
+            gravityCounter++; 
+            gravitySpeed = (int)(GRAVITY_DELAY * Math.Pow(0.95, score / 100.0));
+            if (gravitySpeed < 5) gravitySpeed = 5;
 
             if (gravityCounter >= gravitySpeed)
             {
