@@ -80,7 +80,7 @@ public class Kernel : Sys.Kernel
         Global.PIT.Wait(1);
         StartupScreen.Show();
 
-        Sys.KeyboardManager.SetKeyLayout(new DE_Standard());
+        Sys.KeyboardManager.SetKeyLayout(new DEStandardLayout());
 
         // Clear the console and display welcome message
         ConsoleHelpers.ClearConsole();

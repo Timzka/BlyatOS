@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using Cosmos.HAL;
 using Cosmos.System.Graphics;
 using BlyatOS.Library.Configs;
@@ -9,6 +8,7 @@ using Cosmos.System.Graphics.Fonts;
 using BlyatOS.Library.Helpers;
 using System.Text;
 using Cosmos.Core.Memory;
+using System.Drawing;
 
 namespace BadTetrisCS;
 
@@ -149,7 +149,6 @@ public class BadTetris
 
     private const ulong TARGET_FRAME_TIME_NS = 16666666; // 60 FPS
 
-    // MEMORY OPTIMIZATION: bool array statt Color array (1 byte statt 4 bytes pro Block)
     private bool[] field;
     private Tetromino currentBlock = null!;
     private TetrominoType nextType;
@@ -167,19 +166,9 @@ public class BadTetris
     private Canvas canvas;
     private Font font;
 
-    // CACHED PENS - einmal holen, immer wiederverwenden
-    private Pen blackPen;
-    private Pen whitePen;
-    private Pen lightGrayPen;
-    private Pen redPen;
-    private Pen yellowPen;
-    private Pen cyanPen;
-    private Pen grayPen;
-
     private int boardX;
     private int boardY;
 
-    // Reusable StringBuilder für Text
     private StringBuilder sb = new StringBuilder(64);
 
     public BadTetris()
@@ -192,15 +181,6 @@ public class BadTetris
 
         boardX = ((int)DisplaySettings.ScreenWidth - (FIELD_WIDTH * BLOCK_SIZE)) / 2;
         boardY = 50;
-
-        // Cache all pens once
-        blackPen = DisplaySettings.GetPen(Color.Black);
-        whitePen = DisplaySettings.GetPen(Color.White);
-        lightGrayPen = DisplaySettings.GetPen(Color.LightGray);
-        redPen = DisplaySettings.GetPen(Color.Red);
-        yellowPen = DisplaySettings.GetPen(Color.Yellow);
-        cyanPen = DisplaySettings.GetPen(Color.Cyan);
-        grayPen = DisplaySettings.GetPen(Color.Gray);
 
         for (int i = 0; i < field.Length; i++)
             field[i] = false;
@@ -239,20 +219,9 @@ public class BadTetris
         return tetromino.CanPlace(FIELD_WIDTH, FIELD_HEIGHT, field);
     }
 
-    private bool CanMoveDown(Tetromino block)
-    {
-        return block.CanPlace(FIELD_WIDTH, FIELD_HEIGHT, field, 0, 1);
-    }
-
-    private bool CanMoveLeft(Tetromino block)
-    {
-        return block.CanPlace(FIELD_WIDTH, FIELD_HEIGHT, field, -1, 0);
-    }
-
-    private bool CanMoveRight(Tetromino block)
-    {
-        return block.CanPlace(FIELD_WIDTH, FIELD_HEIGHT, field, 1, 0);
-    }
+    private bool CanMoveDown(Tetromino block) => block.CanPlace(FIELD_WIDTH, FIELD_HEIGHT, field, 0, 1);
+    private bool CanMoveLeft(Tetromino block) => block.CanPlace(FIELD_WIDTH, FIELD_HEIGHT, field, -1, 0);
+    private bool CanMoveRight(Tetromino block) => block.CanPlace(FIELD_WIDTH, FIELD_HEIGHT, field, 1, 0);
 
     private void LockPiece(Tetromino block)
     {
@@ -278,19 +247,13 @@ public class BadTetris
         return dropDistance;
     }
 
-    // OPTIMIZED: Zeichnet hellgrauen Block mit schwarzem Hintergrund und 1px Rand
-    private void DrawBlock(int x, int y, Pen fillPen)
+    private void DrawBlock(int x, int y, Color color)
     {
         int px = boardX + x * BLOCK_SIZE;
         int py = boardY + y * BLOCK_SIZE;
 
-        // Schwarzer Hintergrund (ganzer Block)
-        canvas.DrawFilledRectangle(blackPen, px, py, BLOCK_SIZE, BLOCK_SIZE);
-
-        // Hellgrauer/Roter Block (etwas kleiner, 1px Rand)
-        int innerPx = px + 1;
-        int innerPy = py + 1;
-        canvas.DrawFilledRectangle(fillPen, innerPx, innerPy, BLOCK_INNER_SIZE, BLOCK_INNER_SIZE);
+        canvas.DrawFilledRectangle(Color.Black, px, py, BLOCK_SIZE, BLOCK_SIZE);
+        canvas.DrawFilledRectangle(color, px + 1, py + 1, BLOCK_INNER_SIZE, BLOCK_INNER_SIZE);
     }
 
     private void DrawBoardBase()
@@ -298,41 +261,33 @@ public class BadTetris
         canvas.Clear(Color.Black);
 
         string title = "TETRIS";
-        canvas.DrawString(title, font, whitePen,
+        canvas.DrawString(title, font, Color.White,
             boardX + (FIELD_WIDTH * BLOCK_SIZE / 2) - (title.Length * font.Width / 2), 10);
 
-        // OPTIMIZED: StringBuilder statt String-Interpolation
         sb.Clear();
         sb.Append("Score: ");
         sb.Append(score);
-        canvas.DrawString(sb.ToString(), font, yellowPen, boardX, boardY - 25);
+        canvas.DrawString(sb.ToString(), font, Color.Yellow, boardX, boardY - 25);
 
         sb.Clear();
         sb.Append("Next: ");
         sb.Append(TetrominoTypeToString(nextType));
-        canvas.DrawString(sb.ToString(), font, cyanPen,
+        canvas.DrawString(sb.ToString(), font, Color.Cyan,
             boardX + FIELD_WIDTH * BLOCK_SIZE + 20, boardY);
 
         int borderX = boardX - 2;
         int borderY = boardY - 2;
         int borderW = FIELD_WIDTH * BLOCK_SIZE + 3;
         int borderH = FIELD_HEIGHT * BLOCK_SIZE + 3;
-        canvas.DrawRectangle(whitePen, borderX, borderY, borderW, borderH);
+        canvas.DrawRectangle(Color.White, borderX, borderY, borderW, borderH);
 
-        // Draw locked pieces (alle hellgrau)
         for (int y = 0; y < FIELD_HEIGHT; y++)
-        {
             for (int x = 0; x < FIELD_WIDTH; x++)
-            {
                 if (field[y * FIELD_WIDTH + x])
-                {
-                    DrawBlock(x, y, lightGrayPen);
-                }
-            }
-        }
+                    DrawBlock(x, y, Color.LightGray);
 
         string controls = "WASD/Arrows | Space=Drop | Q=Quit";
-        canvas.DrawString(controls, font, grayPen,
+        canvas.DrawString(controls, font, Color.Gray,
             10, (int)DisplaySettings.ScreenHeight - 20);
     }
 
@@ -340,27 +295,19 @@ public class BadTetris
     {
         DrawBoardBase();
 
-        // Draw current piece (hellgrau)
         for (int by = 0; by < 4; by++)
-        {
             for (int bx = 0; bx < 4; bx++)
-            {
                 if (currentBlock.GetShape(bx, by))
                 {
                     int x = currentBlock.X + bx;
                     int y = currentBlock.Y + by;
                     if (x >= 0 && x < FIELD_WIDTH && y >= 0 && y < FIELD_HEIGHT)
-                    {
-                        DrawBlock(x, y, lightGrayPen);
-                    }
+                        DrawBlock(x, y, Color.LightGray);
                 }
-            }
-        }
 
         canvas.Display();
     }
 
-    // OPTIMIZED: Rote Blink-Animation ohne Color-Objekte zu erstellen
     private void FlashRows(List<int> rows)
     {
         if (rows.Count == 0) return;
@@ -368,28 +315,18 @@ public class BadTetris
         for (int flash = 0; flash < 3; flash++)
         {
             DrawBoardBase();
-
-            // Flash rows ROT
             foreach (int row in rows)
-            {
                 for (int x = 0; x < FIELD_WIDTH; x++)
-                {
-                    DrawBlock(x, row, redPen);
-                }
-            }
+                    DrawBlock(x, row, Color.Red);
+
             canvas.Display();
             Global.PIT.Wait(5);
 
             DrawBoardBase();
-
-            // Flash back to original (hellgrau)
             foreach (int row in rows)
-            {
                 for (int x = 0; x < FIELD_WIDTH; x++)
-                {
-                    DrawBlock(x, row, lightGrayPen);
-                }
-            }
+                    DrawBlock(x, row, Color.LightGray);
+
             canvas.Display();
             Global.PIT.Wait(5);
         }
@@ -402,15 +339,12 @@ public class BadTetris
         {
             bool full = true;
             for (int x = 0; x < FIELD_WIDTH; x++)
-            {
                 if (!field[y * FIELD_WIDTH + x])
                 {
                     full = false;
                     break;
                 }
-            }
-            if (full)
-                fullRows.Add(y);
+            if (full) fullRows.Add(y);
         }
 
         if (fullRows.Count > 0)
@@ -421,23 +355,18 @@ public class BadTetris
         {
             bool full = true;
             for (int x = 0; x < FIELD_WIDTH; x++)
-            {
                 if (!field[y * FIELD_WIDTH + x])
                 {
                     full = false;
                     break;
                 }
-            }
 
             if (full)
             {
                 for (int ny = y; ny > 0; ny--)
-                {
                     for (int x = 0; x < FIELD_WIDTH; x++)
-                    {
                         field[ny * FIELD_WIDTH + x] = field[(ny - 1) * FIELD_WIDTH + x];
-                    }
-                }
+
                 for (int x = 0; x < FIELD_WIDTH; x++)
                     field[x] = false;
 
@@ -446,7 +375,7 @@ public class BadTetris
             }
         }
 
-        fullRows.Clear(); // Liste aufräumen
+        fullRows.Clear();
         return linesCleared;
     }
 
@@ -466,131 +395,40 @@ public class BadTetris
             {
                 case Sys.ConsoleKeyEx.A:
                 case Sys.ConsoleKeyEx.LeftArrow:
-                    if (!leftHeld)
-                    {
-                        if (CanMoveLeft(currentBlock))
-                        {
-                            currentBlock.X--;
-                            moved = true;
-                        }
-                        leftHeld = true;
-                        leftRepeatTime = DAS;
-                    }
-                    rightHeld = false;
+                    if (!leftHeld && CanMoveLeft(currentBlock)) { currentBlock.X--; moved = true; leftRepeatTime = DAS; }
+                    leftHeld = true; rightHeld = false;
                     break;
-
                 case Sys.ConsoleKeyEx.D:
                 case Sys.ConsoleKeyEx.RightArrow:
-                    if (!rightHeld)
-                    {
-                        if (CanMoveRight(currentBlock))
-                        {
-                            currentBlock.X++;
-                            moved = true;
-                        }
-                        rightHeld = true;
-                        rightRepeatTime = DAS;
-                    }
-                    leftHeld = false;
+                    if (!rightHeld && CanMoveRight(currentBlock)) { currentBlock.X++; moved = true; rightRepeatTime = DAS; }
+                    rightHeld = true; leftHeld = false;
                     break;
-
                 case Sys.ConsoleKeyEx.S:
                 case Sys.ConsoleKeyEx.DownArrow:
                     if (!downHeld)
                     {
-                        if (CanMoveDown(currentBlock))
-                        {
-                            currentBlock.Y++;
-                            moved = true;
-                        }
-                        else
-                        {
-                            LockPiece(currentBlock);
-                            locked = true;
-                        }
-                        downHeld = true;
-                        downRepeatTime = DAS;
+                        if (CanMoveDown(currentBlock)) currentBlock.Y++; else { LockPiece(currentBlock); locked = true; }
+                        moved = true; downRepeatTime = DAS; downHeld = true;
                     }
                     break;
-
                 case Sys.ConsoleKeyEx.W:
                 case Sys.ConsoleKeyEx.UpArrow:
-                    if (!rotateHeld)
-                    {
-                        currentBlock.RotateWithKick(FIELD_WIDTH, FIELD_HEIGHT, field);
-                        moved = true;
-                        rotateHeld = true;
-                    }
+                    if (!rotateHeld) { currentBlock.RotateWithKick(FIELD_WIDTH, FIELD_HEIGHT, field); moved = true; rotateHeld = true; }
                     break;
-
                 case Sys.ConsoleKeyEx.Spacebar:
-                    HardDrop(currentBlock);
-                    LockPiece(currentBlock);
-                    locked = true;
-                    moved = true;
+                    HardDrop(currentBlock); LockPiece(currentBlock); locked = true; moved = true;
                     break;
-
                 case Sys.ConsoleKeyEx.Q:
                 case Sys.ConsoleKeyEx.Escape:
-                    quit = true;
-                    break;
+                    quit = true; break;
             }
         }
 
-        if (leftHeld)
-        {
-            leftRepeatTime--;
-            if (leftRepeatTime <= 0)
-            {
-                if (CanMoveLeft(currentBlock))
-                {
-                    currentBlock.X--;
-                    moved = true;
-                }
-                leftRepeatTime = ARR;
-            }
-        }
+        if (!anyKeyPressed) { leftHeld = rightHeld = downHeld = rotateHeld = false; }
 
-        if (rightHeld)
-        {
-            rightRepeatTime--;
-            if (rightRepeatTime <= 0)
-            {
-                if (CanMoveRight(currentBlock))
-                {
-                    currentBlock.X++;
-                    moved = true;
-                }
-                rightRepeatTime = ARR;
-            }
-        }
-
-        if (downHeld)
-        {
-            downRepeatTime--;
-            if (downRepeatTime <= 0)
-            {
-                if (CanMoveDown(currentBlock))
-                {
-                    currentBlock.Y++;
-                    moved = true;
-                }
-                else
-                {
-                    LockPiece(currentBlock);
-                    locked = true;
-                }
-                downRepeatTime = ARR;
-            }
-        }
-
-        if (!anyKeyPressed)
-        {
-            leftHeld = false;
-            rightHeld = false;
-            downHeld = false;
-            rotateHeld = false;
-        }
+        if (leftHeld && --leftRepeatTime <= 0) { if (CanMoveLeft(currentBlock)) { currentBlock.X--; moved = true; } leftRepeatTime = ARR; }
+        if (rightHeld && --rightRepeatTime <= 0) { if (CanMoveRight(currentBlock)) { currentBlock.X++; moved = true; } rightRepeatTime = ARR; }
+        if (downHeld && --downRepeatTime <= 0) { if (CanMoveDown(currentBlock)) { currentBlock.Y++; moved = true; } else { LockPiece(currentBlock); locked = true; } downRepeatTime = ARR; }
 
         return moved;
     }
@@ -599,29 +437,15 @@ public class BadTetris
     {
         canvas.Clear(Color.Black);
         string gameOver = "GAME OVER!";
-
-        // OPTIMIZED: StringBuilder statt String-Interpolation
-        sb.Clear();
-        sb.Append("Score: ");
-        sb.Append(score);
-        string scoreText = sb.ToString();
-
+        sb.Clear(); sb.Append("Score: "); sb.Append(score); string scoreText = sb.ToString();
         string pressKey = "Press any key...";
-
         int centerX = (int)DisplaySettings.ScreenWidth / 2;
         int centerY = (int)DisplaySettings.ScreenHeight / 2;
-
-        canvas.DrawString(gameOver, font, redPen,
-            centerX - (gameOver.Length * font.Width / 2), centerY - 30);
-        canvas.DrawString(scoreText, font, yellowPen,
-            centerX - (scoreText.Length * font.Width / 2), centerY);
-        canvas.DrawString(pressKey, font, whitePen,
-            centerX - (pressKey.Length * font.Width / 2), centerY + 30);
-
+        canvas.DrawString(gameOver, font, Color.Red, centerX - (gameOver.Length * font.Width / 2), centerY - 30);
+        canvas.DrawString(scoreText, font, Color.Yellow, centerX - (scoreText.Length * font.Width / 2), centerY);
+        canvas.DrawString(pressKey, font, Color.White, centerX - (pressKey.Length * font.Width / 2), centerY + 30);
         canvas.Display();
-
-        while (!Sys.KeyboardManager.KeyAvailable)
-            Global.PIT.Wait(10);
+        while (!Sys.KeyboardManager.KeyAvailable) Global.PIT.Wait(10);
         Sys.KeyboardManager.ReadKey();
     }
 
@@ -629,9 +453,7 @@ public class BadTetris
     {
         canvas.Clear(Color.Black);
         score = 0;
-        for (int i = 0; i < field.Length; i++)
-            field[i] = false;
-
+        for (int i = 0; i < field.Length; i++) field[i] = false;
         currentBlock = SpawnTetromino(GetRandomTetrominoType());
         nextType = GetRandomTetrominoType();
 
@@ -639,62 +461,50 @@ public class BadTetris
         const int GRAVITY_DELAY = 25;
         bool running = true;
         bool needsRedraw = true;
-        int linesCleared = 0;
         bool locked = false;
         bool quit = false;
         bool moved = false;
         int gravitySpeed = 0;
-        ulong frameStartTime = 0;
-        ulong frameEndTime = 0;
-        ulong frameTime = 0;
-        ulong waitTime = 0;
+        ulong frameStartTime = 0, frameEndTime = 0, frameTime = 0, waitTime = 0;
 
         while (running)
         {
             frameStartTime = (ulong)DateTime.Now.Ticks;
-
-            locked = false;
-            locked = false;
             moved = HandleInput(out locked, out quit);
-            if (quit) running = false;
+            if (quit) break;
             if (moved) needsRedraw = true;
 
             gravityCounter++;
-            gravitySpeed = GRAVITY_DELAY - (score / 5000);
+            gravitySpeed = GRAVITY_DELAY - score / 10;
             if (gravitySpeed < 1) gravitySpeed = 1;
 
             if (gravityCounter >= gravitySpeed)
             {
                 gravityCounter = 0;
-                needsRedraw = true;
                 if (CanMoveDown(currentBlock))
-                {
                     currentBlock.Y++;
-                }
                 else
                 {
                     LockPiece(currentBlock);
                     locked = true;
                 }
+                needsRedraw = true;
             }
 
             if (locked)
             {
-                linesCleared = CheckBoard();
-                score += (linesCleared * linesCleared * 100);
-
-                if (!CanSpawn(nextType))
+                int lines = CheckBoard();
+                score += lines * 100;
+                currentBlock = SpawnTetromino(nextType);
+                nextType = GetRandomTetrominoType();
+                if (!CanSpawn(currentBlock.Type))
                 {
                     running = false;
+                    break;
                 }
-                else
-                {
-                    currentBlock = SpawnTetromino(nextType);
-                    nextType = GetRandomTetrominoType();
-                    needsRedraw = true;
-                }
+                locked = false;
+                needsRedraw = true;
             }
-            Heap.Collect();
 
             if (needsRedraw)
             {
@@ -703,31 +513,11 @@ public class BadTetris
             }
 
             frameEndTime = (ulong)DateTime.Now.Ticks;
-            frameTime = (frameEndTime - frameStartTime) * 100;
-            waitTime = 0;
-            if (frameTime > TARGET_FRAME_TIME_NS)
-            {
-                waitTime = 1;
-            }
-            else
-            {
-                waitTime = TARGET_FRAME_TIME_NS - frameTime;
-            }
-
-            if (waitTime > 0)
-            {
-                Global.PIT.WaitNS(waitTime);
-            }
+            frameTime = frameEndTime - frameStartTime;
+            waitTime = TARGET_FRAME_TIME_NS > frameTime ? TARGET_FRAME_TIME_NS - frameTime : 0;
+            if (waitTime > 0) Global.PIT.WaitNS(waitTime / 1000);
         }
 
         ShowGameOver();
-
-        // aufräumen vor letztem GC
-        sb.Clear();
-        currentBlock = null;
-        random = null;
-        field = null;
-        sb = null;
-        Heap.Collect();
     }
 }
