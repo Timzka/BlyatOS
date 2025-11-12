@@ -1,7 +1,4 @@
 ﻿using Cosmos.System.Graphics;
-using System;
-using System.IO;
-using Sys = Cosmos.System;
 
 namespace BlyatOS;
 public static class ImageHelpers

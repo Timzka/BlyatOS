@@ -1,25 +1,17 @@
-using BadTetrisCS;
-using BlyatOS.Library.Configs;
-using BlyatOS.Library.Functions;
-using BlyatOS.Library.Startupthings;
-using Cosmos.HAL;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Cosmos.System.ScanMaps;
-using Sys = Cosmos.System;
-using BlyatOS.Library.BlyatFileSystem;
-using Cosmos.System.ExtendedASCII;
-using System.Text;
-using static BlyatOS.PathHelpers;
-using static BlyatOS.Library.Configs.UsersConfig;
-using Cosmos.System.FileSystem.VFS;
-using Cosmos.System.Graphics;
 using System.Drawing;
+using System.Linq;
+using BlyatOS.Library.BlyatFileSystem;
+using BlyatOS.Library.Configs;
+using BlyatOS.Library.Functions;
 using BlyatOS.Library.Helpers;
+using BlyatOS.Library.Startupthings;
 using Cosmos.Core.Memory;
-using Cosmos.System.Graphics.Fonts;
+using Cosmos.HAL;
+using Cosmos.System.ScanMaps;
+using static BlyatOS.PathHelpers;
+using Sys = Cosmos.System;
 
 namespace BlyatOS;
 
@@ -59,7 +51,7 @@ public class Kernel : Sys.Kernel
         InitializeGraphics();
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
-        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs); 
+        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
         if (LOCKED)
         {
             ConsoleHelpers.WriteLine("WARNING: System is locked!", Color.Red);
@@ -99,7 +91,7 @@ public class Kernel : Sys.Kernel
         {
             // Handle login if not already logged in
 
-            
+
 
             if (!Logged_In)
             {

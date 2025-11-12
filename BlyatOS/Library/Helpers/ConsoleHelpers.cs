@@ -1,12 +1,10 @@
 using System;
 using System.Drawing;
 using System.Text;
-using Cosmos.HAL;
-using Cosmos.System.Graphics;
-using Cosmos.System.Graphics.Fonts;
 using BlyatOS.Library.Configs;
-using Sys = Cosmos.System;
 using Cosmos.Core.Memory;
+using Cosmos.HAL;
+using Sys = Cosmos.System;
 
 namespace BlyatOS.Library.Helpers
 {

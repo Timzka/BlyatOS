@@ -1,8 +1,7 @@
+using System;
 using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Helpers;
-using Cosmos.HAL;
-using System;
 
 namespace BlyatOS;
 
@@ -79,6 +78,6 @@ public class UserManagementApp
                         break;
                     }
             }
-        } while (!exitUserManager); 
+        } while (!exitUserManager);
     }
 }

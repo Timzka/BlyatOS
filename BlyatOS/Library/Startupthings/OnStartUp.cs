@@ -1,9 +1,7 @@
 using System;
 using System.Drawing;
-using Cosmos.HAL;
-using Cosmos.System.Graphics;
-using Cosmos.System.Graphics.Fonts;
 using BlyatOS.Library.Configs;
+using Cosmos.HAL;
 
 namespace BlyatOS.Library.Startupthings
 {
@@ -108,12 +106,12 @@ namespace BlyatOS.Library.Startupthings
                 // Glühende Spitze
                 if (len > 0)
                 {
-                    var colorindex = len % 3; 
-                    Color tipColor = colorindex switch 
-                    { 
-                        0 => Color.DarkGoldenrod, 
-                        1 => Color.Red, 
-                        _ => Color.Yellow 
+                    var colorindex = len % 3;
+                    Color tipColor = colorindex switch
+                    {
+                        0 => Color.DarkGoldenrod,
+                        1 => Color.Red,
+                        _ => Color.Yellow
                     };
 
                     canvas.DrawFilledRectangle(

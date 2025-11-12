@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
+using BlyatOS.Library.Configs;
 using Cosmos.HAL;
 using Cosmos.System.Graphics;
-using BlyatOS.Library.Configs;
-using Sys = Cosmos.System;
 using Cosmos.System.Graphics.Fonts;
-using BlyatOS.Library.Helpers;
-using System.Text;
-using Cosmos.Core.Memory;
-using System.Drawing;
+using Sys = Cosmos.System;
 
 namespace BadTetrisCS;
 
@@ -474,7 +472,7 @@ public class BadTetris
             if (quit) break;
             if (moved) needsRedraw = true;
 
-            gravityCounter++; 
+            gravityCounter++;
             gravitySpeed = (int)(GRAVITY_DELAY * Math.Pow(0.95, score / 100.0));
             if (gravitySpeed < 5) gravitySpeed = 5;
 

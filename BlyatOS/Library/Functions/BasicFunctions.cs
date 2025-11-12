@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using BlyatOS.Library.Helpers;
 
 namespace BlyatOS.Library.Functions;
@@ -27,7 +25,7 @@ public class BasicFunctions
 
         int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
 
-        ConsoleHelpers.WriteLine($"--- Help Page " +currentPage +"/"+ totalPages + GetListTypeName(listType)+" ---");
+        ConsoleHelpers.WriteLine($"--- Help Page " + currentPage + "/" + totalPages + GetListTypeName(listType) + " ---");
         ConsoleHelpers.WriteLine($"--- | = command alias, <> = optional, [] = mandatory                   ---");
 
         var wantedCommandsPage = commands.Skip((currentPage - 1) * commandsPerPage).Take(commandsPerPage);

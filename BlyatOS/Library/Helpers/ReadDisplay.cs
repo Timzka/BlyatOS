@@ -1,8 +1,6 @@
 using System;
 using System.Drawing;
 using System.IO;
-using System.Text;
-using Cosmos.HAL;
 using Cosmos.System.FileSystem.VFS;
 using Cosmos.System.Graphics;
 
@@ -22,35 +20,35 @@ namespace BlyatOS.Library.Helpers
             {
                 // Load and prepare the bitmap
                 Bitmap bmp = ImageHelpers.LoadBMP(path);
-                
+
                 // Get the existing canvas from DisplaySettings
                 var canvas = Configs.DisplaySettings.Canvas;
                 var screenWidth = Configs.DisplaySettings.ScreenWidth;
                 var screenHeight = Configs.DisplaySettings.ScreenHeight;
-                
+
                 // Calculate center position for the image
                 int x = ((int)screenWidth - (int)bmp.Width) / 2;
                 int y = ((int)screenHeight - (int)bmp.Height) / 2;
-                
+
                 // Ensure the position is not negative (in case image is larger than canvas)
                 x = Math.Max(0, x);
                 y = Math.Max(0, y);
-                
+
                 // Clear the screen and draw the image
                 canvas.Clear(Color.Black);
                 canvas.DrawImage(bmp, x, y);
                 canvas.Display();
-                
+
                 // Wait for a key press to continue
                 while (!Cosmos.System.KeyboardManager.KeyAvailable)
                 {
                     // Small delay to prevent high CPU usage
                     Cosmos.HAL.Global.PIT.Wait(10);
                 }
-                
+
                 // Clear the key that was pressed
                 Cosmos.System.KeyboardManager.ReadKey();
-                
+
                 // Clear the screen and restore the console
                 canvas.Clear(Configs.DisplaySettings.BackgroundColor);
                 canvas.Display();

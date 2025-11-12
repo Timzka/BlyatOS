@@ -4,7 +4,6 @@ using System.Data;
 using System.Linq;
 using BlyatOS.Library.Configs;
 using BlyatOS.Library.Helpers;
-using Cosmos.HAL;
 using static BlyatOS.Library.Configs.UsersConfig;
 
 namespace BlyatOS.Library.Functions;
@@ -48,7 +47,7 @@ internal class UserManagement
             _ => Enumerable.Empty<int>()
         };
 
-        if(validIds.Count() == 0)
+        if (validIds.Count() == 0)
         {
             ConsoleHelpers.WriteLine("No valid IDs to delete.");
             return;
@@ -81,16 +80,16 @@ internal class UserManagement
     {
         ConsoleHelpers.WriteLine("Enter username: ");
         string uName = ConsoleHelpers.ReadLine();
-        if(conf.Users.Any(u => u.Username == uName))
+        if (conf.Users.Any(u => u.Username == uName))
         {
             ConsoleHelpers.WriteLine("Users may not have the same Username!");
             return;
         }
         ConsoleHelpers.WriteLine("Enter password: ");
         string password = ConsoleHelpers.ReadLine();
-        ConsoleHelpers.WriteLine("Enter role (0 - User"+(CheckPermissions(currUser, conf, Permissions.SuperAdmin) ? ", 1 - Admin" : "") + ")");
+        ConsoleHelpers.WriteLine("Enter role (0 - User" + (CheckPermissions(currUser, conf, Permissions.SuperAdmin) ? ", 1 - Admin" : "") + ")");
         string roleInput = ConsoleHelpers.ReadLine();
-        int[] validRolesToCreate = GetValidRoles(currUser,conf);
+        int[] validRolesToCreate = GetValidRoles(currUser, conf);
         if (!int.TryParse(roleInput, out int roleInt))
         {
             ConsoleHelpers.WriteLine("You cannot delete yourself.");
@@ -109,7 +108,7 @@ internal class UserManagement
             newId++;
         }
         conf.Users.Add(new UsersConfig.User(uName, newId, password, role));
-        ConsoleHelpers.WriteLine($"User "+uName+" created with ID "+newId+" and role "+RoleToString(role)); //role.Tostring geht nicht
+        ConsoleHelpers.WriteLine($"User " + uName + " created with ID " + newId + " and role " + RoleToString(role)); //role.Tostring geht nicht
     }
 
     static string RoleToString(URoles role)
