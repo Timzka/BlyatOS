@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 using BlyatOS.Library.Configs;
+using BlyatOS.Library.Ressources;
 using Cosmos.HAL;
 using Cosmos.System.Graphics;
 using Cosmos.System.Graphics.Fonts;
+using Cosmos.System.Audio.IO;
 using Sys = Cosmos.System;
 
 namespace BadTetrisCS;
@@ -141,7 +143,7 @@ public class BadTetris
     private const int FIELD_WIDTH = 10;
     private const int FIELD_HEIGHT = 20;
     private const int BLOCK_SIZE = 20;
-    private const int BLOCK_INNER_SIZE = 18; // Block ist 2px kleiner (1px Rand)
+    private const int BLOCK_INNER_SIZE = 18;
     private const int DAS = 8;
     private const int ARR = 1;
 
@@ -151,6 +153,7 @@ public class BadTetris
     private Tetromino currentBlock = null!;
     private TetrominoType nextType;
     private int score;
+    private int highScore;
     private Random random;
 
     private bool leftHeld = false;
@@ -169,6 +172,10 @@ public class BadTetris
 
     private StringBuilder sb = new StringBuilder(64);
 
+    // Audio looping
+    private MemoryAudioStream currentMusic = null!;
+    private long lastMusicCheck = 0;
+
     public BadTetris()
     {
         canvas = DisplaySettings.Canvas;
@@ -176,12 +183,43 @@ public class BadTetris
         field = new bool[FIELD_HEIGHT * FIELD_WIDTH];
         random = new Random();
         score = 0;
+        highScore = 0;
 
         boardX = ((int)DisplaySettings.ScreenWidth - (FIELD_WIDTH * BLOCK_SIZE)) / 2;
         boardY = 50;
 
         for (int i = 0; i < field.Length; i++)
             field[i] = false;
+
+        // Audio initialisieren
+        AudioHandler.Initialize();
+    }
+
+    private void PlayMusic(MemoryAudioStream music, bool loop = true)
+    {
+        if (music == null) return;
+
+        AudioHandler.Stop();
+        currentMusic = music;
+        currentMusic.Position = 0;
+        AudioHandler.Play(currentMusic);
+    }
+
+    private void UpdateMusicLoop()
+    {
+        // Prüfe alle 100ms ob Musik noch läuft
+        long now = DateTime.Now.Ticks;
+        if (now - lastMusicCheck > 1000000) // ~100ms
+        {
+            lastMusicCheck = now;
+
+            if (currentMusic != null && !AudioHandler.IsPlaying)
+            {
+                // Musik ist zu Ende, neu starten
+                currentMusic.Position = 0;
+                AudioHandler.Play(currentMusic);
+            }
+        }
     }
 
     private string TetrominoTypeToString(TetrominoType type)
@@ -266,6 +304,11 @@ public class BadTetris
         sb.Append("Score: ");
         sb.Append(score);
         canvas.DrawString(sb.ToString(), font, Color.Yellow, boardX, boardY - 25);
+
+        sb.Clear();
+        sb.Append("High: ");
+        sb.Append(highScore);
+        canvas.DrawString(sb.ToString(), font, Color.Gold, boardX + 100, boardY - 25);
 
         sb.Clear();
         sb.Append("Next: ");
@@ -431,24 +474,116 @@ public class BadTetris
         return moved;
     }
 
-    private void ShowGameOver()
+    private void ShowStartScreen()
     {
         canvas.Clear(Color.Black);
-        string gameOver = "GAME OVER!";
-        sb.Clear(); sb.Append("Score: "); sb.Append(score); string scoreText = sb.ToString();
-        string pressKey = "Press any key...";
+
+        // Title Musik abspielen
+        PlayMusic(Audio.Title, true);
+
+        string title = "TETRIS";
+        string subtitle = "Classic Edition";
+        string pressKey = "Press any key to start";
+        string highScoreText = "";
+
+        if (highScore > 0)
+        {
+            sb.Clear();
+            sb.Append("High Score: ");
+            sb.Append(highScore);
+            highScoreText = sb.ToString();
+        }
+
         int centerX = (int)DisplaySettings.ScreenWidth / 2;
         int centerY = (int)DisplaySettings.ScreenHeight / 2;
-        canvas.DrawString(gameOver, font, Color.Red, centerX - (gameOver.Length * font.Width / 2), centerY - 30);
-        canvas.DrawString(scoreText, font, Color.Yellow, centerX - (scoreText.Length * font.Width / 2), centerY);
-        canvas.DrawString(pressKey, font, Color.White, centerX - (pressKey.Length * font.Width / 2), centerY + 30);
+
+        canvas.DrawString(title, font, Color.Cyan,
+            centerX - (title.Length * font.Width / 2), centerY - 60);
+        canvas.DrawString(subtitle, font, Color.White,
+            centerX - (subtitle.Length * font.Width / 2), centerY - 30);
+
+        if (highScore > 0)
+        {
+            canvas.DrawString(highScoreText, font, Color.Gold,
+                centerX - (highScoreText.Length * font.Width / 2), centerY + 10);
+        }
+
+        canvas.DrawString(pressKey, font, Color.Gray,
+            centerX - (pressKey.Length * font.Width / 2), centerY + 50);
+
         canvas.Display();
-        while (!Sys.KeyboardManager.KeyAvailable) Global.PIT.Wait(10);
+
+        // Warte auf Tastendruck mit Musik-Loop
+        while (!Sys.KeyboardManager.KeyAvailable)
+        {
+            UpdateMusicLoop();
+            Global.PIT.Wait(10);
+        }
+        Sys.KeyboardManager.ReadKey();
+    }
+
+    private void ShowGameOver(bool isNewHighScore)
+    {
+        // Game Over Musik abspielen
+        PlayMusic(Audio.GameOver, false);
+
+        canvas.Clear(Color.Black);
+        string gameOver = "GAME OVER!";
+        sb.Clear();
+        sb.Append("Score: ");
+        sb.Append(score);
+        string scoreText = sb.ToString();
+
+        string highScoreText = isNewHighScore ? "NEW HIGH SCORE!" : "";
+        string pressKey = "Press any key...";
+
+        int centerX = (int)DisplaySettings.ScreenWidth / 2;
+        int centerY = (int)DisplaySettings.ScreenHeight / 2;
+
+        canvas.DrawString(gameOver, font, Color.Red,
+            centerX - (gameOver.Length * font.Width / 2), centerY - 40);
+        canvas.DrawString(scoreText, font, Color.Yellow,
+            centerX - (scoreText.Length * font.Width / 2), centerY - 10);
+
+        if (isNewHighScore)
+        {
+            canvas.DrawString(highScoreText, font, Color.Gold,
+                centerX - (highScoreText.Length * font.Width / 2), centerY + 20);
+        }
+
+        canvas.DrawString(pressKey, font, Color.White,
+            centerX - (pressKey.Length * font.Width / 2), centerY + 50);
+
+        canvas.Display();
+
+        // Warte bis GameOver Musik fertig ist
+        while (AudioHandler.IsPlaying)
+        {
+            Global.PIT.Wait(10);
+        }
+
+        // Falls Highscore, spiele Highscore Musik
+        if (isNewHighScore && Audio.HighScore != null)
+        {
+            PlayMusic(Audio.HighScore, false);
+        }
+
+        // Warte auf Tastendruck
+        while (!Sys.KeyboardManager.KeyAvailable)
+        {
+            Global.PIT.Wait(10);
+        }
         Sys.KeyboardManager.ReadKey();
     }
 
     public void Run()
     {
+        // Startup Screen anzeigen
+        ShowStartScreen();
+
+        // Haupt-Musik starten
+        PlayMusic(Audio.MainMusic, true);
+
         canvas.Clear(Color.Black);
         score = 0;
         for (int i = 0; i < field.Length; i++) field[i] = false;
@@ -468,6 +603,10 @@ public class BadTetris
         while (running)
         {
             frameStartTime = (ulong)DateTime.Now.Ticks;
+
+            // Musik-Loop aktualisieren
+            UpdateMusicLoop();
+
             moved = HandleInput(out locked, out quit);
             if (quit) break;
             if (moved) needsRedraw = true;
@@ -492,7 +631,7 @@ public class BadTetris
             if (locked)
             {
                 int lines = CheckBoard();
-                score += lines * 100;
+                score += lines * (100) + (lines == 4 ? 1000 : 0);
                 currentBlock = SpawnTetromino(nextType);
                 nextType = GetRandomTetrominoType();
                 if (!CanSpawn(currentBlock.Type))
@@ -516,6 +655,16 @@ public class BadTetris
             if (waitTime > 0) Global.PIT.WaitNS(waitTime / 1000);
         }
 
-        ShowGameOver();
+        // Prüfe ob neuer Highscore
+        bool isNewHighScore = score > highScore;
+        if (isNewHighScore)
+        {
+            highScore = score;
+        }
+
+        ShowGameOver(isNewHighScore);
+
+        // Musik stoppen
+        AudioHandler.Stop();
     }
 }

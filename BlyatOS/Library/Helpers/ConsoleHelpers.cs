@@ -115,7 +115,7 @@ namespace BlyatOS.Library.Helpers
             }
             catch
             {
-                ClearConsole();
+                ClearConsole(); 
             }
         }
 

@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using BlyatOS.Library.BlyatFileSystem;
 using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Helpers;
+using BlyatOS.Library.Ressources;
 using BlyatOS.Library.Startupthings;
 using Cosmos.Core.Memory;
 using Cosmos.HAL;
+using Cosmos.System.FileSystem.VFS;
 using Cosmos.System.ScanMaps;
 using static BlyatOS.PathHelpers;
 using Sys = Cosmos.System;
@@ -43,14 +46,19 @@ public class Kernel : Sys.Kernel
 
     protected override void BeforeRun()
     {
-
+        
         // Initialize display settings and graphics1024x768
         DisplaySettings.ScreenWidth = 1024;
         DisplaySettings.ScreenHeight = 768;
         Global.PIT.Wait(10);
+        Ressourceloader.InitRessources();
         InitializeGraphics();
+        AudioHandler.Initialize();
+        Global.PIT.Wait(1000);
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
+       
+        Global.PIT.Wait(1000);
         LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
         if (LOCKED)
         {
@@ -66,13 +74,15 @@ public class Kernel : Sys.Kernel
                 Cosmos.System.Power.Reboot();
             }
             LOCKED = false;
+            ConsoleHelpers.WriteLine("Press any key to continue...", Color.White);
+            ConsoleHelpers.ReadKey();
             Global.PIT.Wait(1000);
         }
         Global.PIT.Wait(10);
 
         OnStartUp.RunLoadingScreenThing();
         Global.PIT.Wait(1);
-        StartupScreen.Show();
+        //StartupScreen.Show();
 
         Sys.KeyboardManager.SetKeyLayout(new DEStandardLayout());
 
@@ -136,16 +146,14 @@ public class Kernel : Sys.Kernel
                             BasicFunctions.Help(page, BasicFunctions.ListType.Main);
                             break;
                         }
-                    case "memtest":
+                    case "musictest":
                         {
-                            // Lazy load directory listings only when needed
-                            if (dirs == null) dirs = fsh.GetDirectories(CurrentDirectory);
-                            if (files == null) files = fsh.GetFiles(CurrentDirectory);
-
-                            for (int m = 0; m < 30; m++)
-                            {
-                                FileFunctions.ListAll(dirs, files);
-                            }
+                            AudioHandler.Play(Audio.MainMusic);
+                            break;
+                        }
+                    case "stopmusic":
+                        {
+                            AudioHandler.Stop();
                             break;
                         }
                     case "changecolor":
@@ -158,7 +166,6 @@ public class Kernel : Sys.Kernel
                             // Get RAM values (returns uint, not ulong)
                             uint usedRAM = Cosmos.Core.GCImplementation.GetUsedRAM();
                             ulong availableRAM = Cosmos.Core.GCImplementation.GetAvailableRAM();
-
                             // Use single WriteLine to minimize allocations
                             ConsoleHelpers.Write("Used RAM: ", Color.Cyan);
                             ConsoleHelpers.Write((usedRAM / 1000000).ToString(), Color.White);
