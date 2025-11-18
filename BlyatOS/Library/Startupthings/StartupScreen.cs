@@ -1,7 +1,4 @@
 using System;
-using System.Drawing;
-using Cosmos.System.Graphics;
-using Cosmos.System.Graphics.Fonts;
 using BlyatOS.Library.Configs;
 using Sys = Cosmos.System;
 
@@ -15,29 +12,28 @@ namespace BlyatOS.Library.Startupthings
 
         public static void Show()
         {
-            // Clear the screen with background color
             var canvas = DisplaySettings.Canvas;
+            var font = DisplaySettings.Font;
+
+            // Bildschirm löschen
             canvas.Clear(DisplaySettings.BackgroundColor);
 
             bool logoDisplayed = false;
-            int logoBottomY = 0;
-            var font = DisplaySettings.Font;
+            uint logoBottomY = 0;
 
-            // === Nutze gecachten Pen statt new Pen() ===
-            var pen = DisplaySettings.GetForegroundPen();
-
-            // Try to load and display the logo
+            // === Versuch, das Logo zu laden ===
             if (Sys.FileSystem.VFS.VFSManager.FileExists(LogoPath))
             {
                 try
                 {
                     var logo = ImageHelpers.LoadBMP(LogoPath);
-                    // Center the logo
-                    int x = (DisplaySettings.ScreenWidth - (int)logo.Width) / 2;
-                    int y = (DisplaySettings.ScreenHeight - (int)logo.Height) / 3;
+
+                    int x = (int)((DisplaySettings.ScreenWidth - logo.Width) / 2);
+                    int y = (int)((DisplaySettings.ScreenHeight - logo.Height) / 3);
+
                     canvas.DrawImage(logo, x, y);
                     logoDisplayed = true;
-                    logoBottomY = y + (int)logo.Height;
+                    logoBottomY = (uint)(y + logo.Height);
                 }
                 catch
                 {
@@ -45,33 +41,38 @@ namespace BlyatOS.Library.Startupthings
                 }
             }
 
-            // Show placeholder text if no logo is displayed
+            // === Falls kein Logo vorhanden, Placeholder-Text anzeigen ===
             if (!logoDisplayed)
             {
                 string missingText = PlaceholderText;
                 int textWidth = missingText.Length * font.Width;
                 int textHeight = font.Height;
-                int x = (DisplaySettings.ScreenWidth - textWidth) / 2;
-                int y = (DisplaySettings.ScreenHeight / 3) - (textHeight / 2);
-                canvas.DrawString(missingText, font, pen, x, y);
-                logoBottomY = y + textHeight;
+
+                int x = (int)((DisplaySettings.ScreenWidth - (uint)textWidth) / 2);
+                int y = (int)((DisplaySettings.ScreenHeight / 3) - (uint)(textHeight / 2));
+
+                canvas.DrawString(missingText, font, DisplaySettings.ForegroundColor, x, y);
+                logoBottomY = (uint)(y + textHeight);
             }
 
-            // Show prompt text below logo or placeholder
+            // === Prompt-Text unterhalb des Logos oder Platzhalters ===
             {
                 int promptWidth = PromptText.Length * font.Width;
-                int x = (DisplaySettings.ScreenWidth - promptWidth) / 2;
-                int y = logoBottomY + 40; // Add some space below the logo/placeholder
-                canvas.DrawString(PromptText, font, pen, x, y);
+                int x = (int)((DisplaySettings.ScreenWidth - (uint)promptWidth) / 2);
+                int y = (int)(logoBottomY + 40); // Abstand unterhalb des Logos/Texts
+
+                canvas.DrawString(PromptText, font, DisplaySettings.ForegroundColor, x, y);
             }
 
-            // Update the display
+            // === Anzeige aktualisieren ===
             canvas.Display();
+
+            // Auf Tasteneingabe warten
             Console.ReadKey();
 
-            // Clear the screen
+            // Bildschirm leeren
             canvas.Clear(DisplaySettings.BackgroundColor);
-            //canvas.Disable();
+            canvas.Display();
         }
     }
 }

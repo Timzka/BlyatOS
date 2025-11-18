@@ -1,8 +1,6 @@
 using System;
 using System.Drawing;
 using System.IO;
-using System.Text;
-using Cosmos.HAL;
 using Cosmos.System.FileSystem.VFS;
 using Cosmos.System.Graphics;
 
@@ -10,11 +8,6 @@ namespace BlyatOS.Library.Helpers
 {
     public static class ReadDisplay
     {
-        /// <summary>
-        /// Displays a bitmap file on a full-screen canvas
-        /// </summary>
-        /// <param name="path">Path to the bitmap file</param>
-        /// <param name="displayTimeMs">Time in milliseconds to display the image (default: 5000ms)</param>
         public static void DisplayBitmap(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -27,35 +20,35 @@ namespace BlyatOS.Library.Helpers
             {
                 // Load and prepare the bitmap
                 Bitmap bmp = ImageHelpers.LoadBMP(path);
-                
+
                 // Get the existing canvas from DisplaySettings
                 var canvas = Configs.DisplaySettings.Canvas;
                 var screenWidth = Configs.DisplaySettings.ScreenWidth;
                 var screenHeight = Configs.DisplaySettings.ScreenHeight;
-                
+
                 // Calculate center position for the image
-                int x = (screenWidth - (int)bmp.Width) / 2;
-                int y = (screenHeight - (int)bmp.Height) / 2;
-                
+                int x = ((int)screenWidth - (int)bmp.Width) / 2;
+                int y = ((int)screenHeight - (int)bmp.Height) / 2;
+
                 // Ensure the position is not negative (in case image is larger than canvas)
                 x = Math.Max(0, x);
                 y = Math.Max(0, y);
-                
+
                 // Clear the screen and draw the image
                 canvas.Clear(Color.Black);
                 canvas.DrawImage(bmp, x, y);
                 canvas.Display();
-                
+
                 // Wait for a key press to continue
                 while (!Cosmos.System.KeyboardManager.KeyAvailable)
                 {
                     // Small delay to prevent high CPU usage
                     Cosmos.HAL.Global.PIT.Wait(10);
                 }
-                
+
                 // Clear the key that was pressed
                 Cosmos.System.KeyboardManager.ReadKey();
-                
+
                 // Clear the screen and restore the console
                 canvas.Clear(Configs.DisplaySettings.BackgroundColor);
                 canvas.Display();
@@ -67,11 +60,6 @@ namespace BlyatOS.Library.Helpers
             }
         }
 
-        /// <summary>
-        /// Reads the contents of a text file and returns it as a string
-        /// </summary>
-        /// <param name="filePath">Path to the text file</param>
-        /// <returns>Contents of the file as a string</returns>
         public static string ReadTextFile(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
@@ -89,12 +77,6 @@ namespace BlyatOS.Library.Helpers
             return reader.ReadToEnd();
         }
 
-        /// <summary>
-        /// Reads a text file in chunks and processes each chunk with the provided action
-        /// </summary>
-        /// <param name="filePath">Path to the text file</param>
-        /// <param name="chunkSize">Size of each chunk in bytes (default: 8192)</param>
-        /// <param name="processChunk">Action to process each chunk of text</param>
         public static void ReadTextFileInChunks(string filePath, int chunkSize = 8192, Action<string> processChunk = null)
         {
             if (string.IsNullOrWhiteSpace(filePath))

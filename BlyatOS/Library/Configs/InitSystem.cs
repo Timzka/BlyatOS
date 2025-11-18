@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using BlyatOS.Library.Helpers;
 using Cosmos.System.FileSystem;
 using Cosmos.System.FileSystem.VFS;
-using Cosmos.System.Graphics;
 using static BlyatOS.Library.Configs.UsersConfig;
-using static Cosmos.HAL.BlockDevice.ATA_PIO;
 
 namespace BlyatOS.Library.Configs;
 
@@ -23,15 +19,15 @@ internal class InitSystem
             {
                 return false;
             }
-            if(!VFSManager.FileExists(Path.Combine(syspath, "usersconfig.nahui")))
+            if (!VFSManager.FileExists(Path.Combine(syspath, "usersconfig.nahui")))
             {
                 return false;
             }
-            if(!VFSManager.FileExists(Path.Combine(syspath, "systemconfig.nahui")))
+            if (!VFSManager.FileExists(Path.Combine(syspath, "systemconfig.nahui")))
             {
                 return false;
             }
-            if(!VFSManager.FileExists(Path.Combine(syspath, "blyatlogo.bmp")))
+            if (!VFSManager.FileExists(Path.Combine(syspath, "blyatlogo.bmp")))
             {
                 return false;
             }
@@ -90,7 +86,7 @@ internal class InitSystem
             return false;
         }
     }
-    public static void WriteDefaultUsers( string usersPath)
+    public static void WriteDefaultUsers(string usersPath)
     {
         var defaultUsers = new List<User>
     {
@@ -122,7 +118,7 @@ internal class InitSystem
                 throw new Exception("Cannot write to " + usersPath);
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             ConsoleHelpers.WriteLine(ex.ToString());
         }

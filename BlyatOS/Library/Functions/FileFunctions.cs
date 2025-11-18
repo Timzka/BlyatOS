@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Cosmos.System.FileSystem;
-using Sys = Cosmos.System;
-using Cosmos.System.FileSystem.VFS;
-using BlyatOS.Library.Helpers;
 using System.Drawing;
+using System.IO;
 using System.Linq;
-using System.Xml.Linq;
-using static BlyatOS.PathHelpers;
-using BlyatOS.Library.BlyatFileSystem;
 using System.Text;
+using BlyatOS.Library.BlyatFileSystem;
+using BlyatOS.Library.Helpers;
+using Cosmos.System.FileSystem;
+using Cosmos.System.FileSystem.VFS;
+using static BlyatOS.PathHelpers;
 
 namespace BlyatOS.Library.Functions
 {
