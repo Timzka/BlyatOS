@@ -12,6 +12,7 @@ using BlyatOS.Library.Startupthings;
 using Cosmos.Core.Memory;
 using Cosmos.HAL;
 using Cosmos.System.FileSystem.VFS;
+using Cosmos.System.Graphics;
 using Cosmos.System.ScanMaps;
 using static BlyatOS.PathHelpers;
 using Sys = Cosmos.System;
@@ -154,6 +155,18 @@ public class Kernel : Sys.Kernel
                     case "stopmusic":
                         {
                             AudioHandler.Stop();
+                            break;
+                        }
+                    case "showbmpbig": //temp --> way to resize bitmaps easily
+                        {
+                            string path = IsAbsolute(commandArgs[0])
+                                ? commandArgs[0]
+                                : PathCombine(CurrentDirectory, commandArgs[0]).TrimEnd('\\');
+                            
+                            var data = DisplaySettings.ResizeBitmap(ImageHelpers.LoadBMP(path), uint.Parse(commandArgs[1]), uint.Parse(commandArgs[2]), true);
+                            var bmp = new Bitmap(uint.Parse(commandArgs[1]), uint.Parse(commandArgs[2]), ColorDepth.ColorDepth32);
+                            bmp.RawData = data;
+                            DisplaySettings.Canvas.DrawImage(bmp, 0, 0);
                             break;
                         }
                     case "changecolor":
