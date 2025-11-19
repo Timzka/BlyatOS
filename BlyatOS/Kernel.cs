@@ -347,7 +347,6 @@ public class Kernel : Sys.Kernel
                 // Clear commandArgs after each command to free memory
                 commandArgs.Clear();
 
-                // Aggressive GC after each command (NclearOS 2 pattern)
                 Heap.Collect();
             }
 

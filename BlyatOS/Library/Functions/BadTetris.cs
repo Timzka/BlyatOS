@@ -153,7 +153,7 @@ public class BadTetris
     private Tetromino currentBlock = null!;
     private TetrominoType nextType;
     private int score;
-    private int highScore;
+    private List<int> highScores; // Highscore-Liste (Referenz)
     private Random random;
 
     private bool leftHeld = false;
@@ -176,14 +176,14 @@ public class BadTetris
     private MemoryAudioStream currentMusic = null!;
     private long lastMusicCheck = 0;
 
-    public BadTetris()
+    public BadTetris(List<int> highScoreList)
     {
         canvas = DisplaySettings.Canvas;
         font = DisplaySettings.Font;
         field = new bool[FIELD_HEIGHT * FIELD_WIDTH];
         random = new Random();
         score = 0;
-        highScore = 0;
+        highScores = highScoreList; // Referenz auf die Liste
 
         boardX = ((int)DisplaySettings.ScreenWidth - (FIELD_WIDTH * BLOCK_SIZE)) / 2;
         boardY = 50;
@@ -306,8 +306,11 @@ public class BadTetris
         canvas.DrawString(sb.ToString(), font, Color.Yellow, boardX, boardY - 25);
 
         sb.Clear();
-        sb.Append("High: ");
-        sb.Append(highScore);
+        sb.Append("Best: ");
+        if (highScores.Count > 0)
+            sb.Append(highScores[0]);
+        else
+            sb.Append("0");
         canvas.DrawString(sb.ToString(), font, Color.Gold, boardX + 100, boardY - 25);
 
         sb.Clear();
@@ -484,32 +487,38 @@ public class BadTetris
         string title = "TETRIS";
         string subtitle = "Classic Edition";
         string pressKey = "Press any key to start";
-        string highScoreText = "";
-
-        if (highScore > 0)
-        {
-            sb.Clear();
-            sb.Append("High Score: ");
-            sb.Append(highScore);
-            highScoreText = sb.ToString();
-        }
 
         int centerX = (int)DisplaySettings.ScreenWidth / 2;
         int centerY = (int)DisplaySettings.ScreenHeight / 2;
 
         canvas.DrawString(title, font, Color.Cyan,
-            centerX - (title.Length * font.Width / 2), centerY - 60);
+            centerX - (title.Length * font.Width / 2), centerY - 100);
         canvas.DrawString(subtitle, font, Color.White,
-            centerX - (subtitle.Length * font.Width / 2), centerY - 30);
+            centerX - (subtitle.Length * font.Width / 2), centerY - 70);
 
-        if (highScore > 0)
+        // Top 5 Highscores anzeigen
+        if (highScores.Count > 0)
         {
-            canvas.DrawString(highScoreText, font, Color.Gold,
-                centerX - (highScoreText.Length * font.Width / 2), centerY + 10);
+            string highscoreTitle = "TOP SCORES";
+            canvas.DrawString(highscoreTitle, font, Color.Gold,
+                centerX - (highscoreTitle.Length * font.Width / 2), centerY - 30);
+
+            for (int i = 0; i < highScores.Count; i++)
+            {
+                sb.Clear();
+                sb.Append(i + 1);
+                sb.Append(". ");
+                sb.Append(highScores[i]);
+                string scoreText = sb.ToString();
+
+                Color scoreColor = i == 0 ? Color.Gold : Color.Yellow;
+                canvas.DrawString(scoreText, font, scoreColor,
+                    centerX - (scoreText.Length * font.Width / 2), centerY + (i * 20));
+            }
         }
 
         canvas.DrawString(pressKey, font, Color.Gray,
-            centerX - (pressKey.Length * font.Width / 2), centerY + 50);
+            centerX - (pressKey.Length * font.Width / 2), centerY + 120);
 
         canvas.Display();
 
@@ -522,7 +531,7 @@ public class BadTetris
         Sys.KeyboardManager.ReadKey();
     }
 
-    private void ShowGameOver(bool isNewHighScore)
+    private void ShowGameOver(bool isNewHighScore, int highScorePosition)
     {
         // Game Over Musik abspielen
         PlayMusic(Audio.GameOver, false);
@@ -534,25 +543,52 @@ public class BadTetris
         sb.Append(score);
         string scoreText = sb.ToString();
 
-        string highScoreText = isNewHighScore ? "NEW HIGH SCORE!" : "";
+        string positionText = "";
+        if (isNewHighScore)
+        {
+            sb.Clear();
+            sb.Append("TOP ");
+            sb.Append(highScorePosition + 1);
+            sb.Append(" SCORE!");
+            positionText = sb.ToString();
+        }
+
         string pressKey = "Press any key...";
 
         int centerX = (int)DisplaySettings.ScreenWidth / 2;
         int centerY = (int)DisplaySettings.ScreenHeight / 2;
 
         canvas.DrawString(gameOver, font, Color.Red,
-            centerX - (gameOver.Length * font.Width / 2), centerY - 40);
+            centerX - (gameOver.Length * font.Width / 2), centerY - 60);
         canvas.DrawString(scoreText, font, Color.Yellow,
-            centerX - (scoreText.Length * font.Width / 2), centerY - 10);
+            centerX - (scoreText.Length * font.Width / 2), centerY - 30);
 
         if (isNewHighScore)
         {
-            canvas.DrawString(highScoreText, font, Color.Gold,
-                centerX - (highScoreText.Length * font.Width / 2), centerY + 20);
+            canvas.DrawString(positionText, font, Color.Gold,
+                centerX - (positionText.Length * font.Width / 2), centerY);
+
+            // Highscore-Liste anzeigen
+            string topScoresTitle = "TOP SCORES";
+            canvas.DrawString(topScoresTitle, font, Color.White,
+                centerX - (topScoresTitle.Length * font.Width / 2), centerY + 30);
+
+            for (int i = 0; i < highScores.Count; i++)
+            {
+                sb.Clear();
+                sb.Append(i + 1);
+                sb.Append(". ");
+                sb.Append(highScores[i]);
+                string scoreEntry = sb.ToString();
+
+                Color entryColor = i == highScorePosition ? Color.Gold : Color.LightGray;
+                canvas.DrawString(scoreEntry, font, entryColor,
+                    centerX - (scoreEntry.Length * font.Width / 2), centerY + 50 + (i * 16));
+            }
         }
 
         canvas.DrawString(pressKey, font, Color.White,
-            centerX - (pressKey.Length * font.Width / 2), centerY + 50);
+            centerX - (pressKey.Length * font.Width / 2), centerY + 150);
 
         canvas.Display();
 
@@ -574,6 +610,38 @@ public class BadTetris
             Global.PIT.Wait(10);
         }
         Sys.KeyboardManager.ReadKey();
+    }
+
+    private void UpdateHighScores(int newScore, out bool isNewHighScore, out int position)
+    {
+        isNewHighScore = false;
+        position = -1;
+
+        // Prüfe ob Score in Top 5 kommt
+        for (int i = 0; i < highScores.Count; i++)
+        {
+            if (newScore > highScores[i])
+            {
+                highScores.Insert(i, newScore);
+                isNewHighScore = true;
+                position = i;
+                break;
+            }
+        }
+
+        // Falls Liste noch nicht voll ist und Score noch nicht eingefügt wurde
+        if (!isNewHighScore && highScores.Count < 5)
+        {
+            highScores.Add(newScore);
+            isNewHighScore = true;
+            position = highScores.Count - 1;
+        }
+
+        // Auf maximal 5 Einträge begrenzen
+        if (highScores.Count > 5)
+        {
+            highScores.RemoveAt(5);
+        }
     }
 
     public void Run()
@@ -612,8 +680,7 @@ public class BadTetris
             if (moved) needsRedraw = true;
 
             gravityCounter++;
-            gravitySpeed = (int)(GRAVITY_DELAY * Math.Pow(0.95, score / 100.0));
-            if (gravitySpeed < 5) gravitySpeed = 5;
+            gravitySpeed = (int) Math.Max((GRAVITY_DELAY * Math.Pow(0.95, score / 100.0)), 5);
 
             if (gravityCounter >= gravitySpeed)
             {
@@ -655,14 +722,12 @@ public class BadTetris
             if (waitTime > 0) Global.PIT.WaitNS(waitTime / 1000);
         }
 
-        // Prüfe ob neuer Highscore
-        bool isNewHighScore = score > highScore;
-        if (isNewHighScore)
-        {
-            highScore = score;
-        }
+        // Highscores aktualisieren
+        bool isNewHighScore;
+        int highScorePosition;
+        UpdateHighScores(score, out isNewHighScore, out highScorePosition);
 
-        ShowGameOver(isNewHighScore);
+        ShowGameOver(isNewHighScore, highScorePosition);
 
         // Musik stoppen
         AudioHandler.Stop();

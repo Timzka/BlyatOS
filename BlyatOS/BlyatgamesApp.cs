@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using BadTetrisCS;
@@ -12,6 +13,9 @@ namespace BlyatOS
 {
     public class BlyatgamesApp
     {
+        // Statische Highscore-Liste für Tetris (Top 5)
+        private static List<int> tetrisHighScores = new List<int>() { 0, 0, 0, 0, 0 };
+
         public static void Run(Random rand)
         {
             bool exitGames = false;
@@ -38,7 +42,7 @@ namespace BlyatOS
                             ConsoleHelpers.ClearConsole();
                             ConsoleHelpers.WriteLine("Starting BadTetris...");
                             Global.PIT.Wait(100);
-                            BadTetris game = new BadTetris();
+                            BadTetris game = new BadTetris(tetrisHighScores);
                             game.Run();
                             ConsoleHelpers.ClearConsole();
                             break;
@@ -162,6 +166,55 @@ namespace BlyatOS
                             }
 
                             canvas.Clear(DisplaySettings.BackgroundColor);
+                            break;
+                        }
+
+                    case "highscores":
+                        {
+                            ConsoleHelpers.ClearConsole();
+                            ConsoleHelpers.WriteLine("=== TETRIS TOP SCORES ===");
+                            ConsoleHelpers.WriteLine();
+
+                            if (tetrisHighScores.Count == 0)
+                            {
+                                ConsoleHelpers.WriteLine("No high scores yet. Play Tetris to set a record!");
+                            }
+                            else
+                            {
+                                for (int i = 0; i < tetrisHighScores.Count; i++)
+                                {
+                                    ConsoleHelpers.Write((i + 1).ToString());
+                                    ConsoleHelpers.Write(". ");
+                                    ConsoleHelpers.WriteLine(tetrisHighScores[i].ToString());
+                                }
+                            }
+
+                            ConsoleHelpers.WriteLine();
+                            ConsoleHelpers.WriteLine("Press any key to continue...");
+                            ConsoleHelpers.ReadKey();
+                            ConsoleHelpers.ClearConsole();
+                            break;
+                        }
+
+                    case "resethighscores":
+                        {
+                            ConsoleHelpers.ClearConsole();
+                            ConsoleHelpers.Write("Are you sure you want to reset all Tetris high scores? (y/n): ");
+                            var confirm = ConsoleHelpers.ReadLine();
+
+                            if (confirm != null && confirm.ToLower() == "y")
+                            {
+                                tetrisHighScores.Clear();
+                                ConsoleHelpers.WriteLine("High scores have been reset.");
+                            }
+                            else
+                            {
+                                ConsoleHelpers.WriteLine("Reset cancelled.");
+                            }
+
+                            ConsoleHelpers.WriteLine("Press any key to continue...");
+                            ConsoleHelpers.ReadKey();
+                            ConsoleHelpers.ClearConsole();
                             break;
                         }
 
