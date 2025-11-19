@@ -20,6 +20,7 @@
         <DebugEnabled>False</DebugEnabled>
         <OptimizationLevel>1</OptimizationLevel>
         <CompileVBEMultiboot>True</CompileVBEMultiboot>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>

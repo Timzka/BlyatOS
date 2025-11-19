@@ -14,6 +14,7 @@ using Cosmos.HAL;
 using Cosmos.System.FileSystem.VFS;
 using Cosmos.System.Graphics;
 using Cosmos.System.ScanMaps;
+using CosmosAudioInfrastructure.HAL.Drivers.PCI.Audio;
 using static BlyatOS.PathHelpers;
 using Sys = Cosmos.System;
 
@@ -54,7 +55,17 @@ public class Kernel : Sys.Kernel
         Global.PIT.Wait(10);
         Ressourceloader.InitRessources();
         InitializeGraphics();
-        AudioHandler.Initialize();
+        var baseAddr = SoundBlaster16.DetectBaseAddress();
+        if (baseAddr != null)
+        {
+            AudioHandler.Initialize(AudioDriverType.SoundBlaster16, debug: true);
+            Console.ReadKey();
+        }
+        else
+        {
+            ConsoleHelpers.WriteLine("could not find baseAddr");
+            Console.ReadKey();
+        }
         Global.PIT.Wait(1000);
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
