@@ -1,5 +1,6 @@
-﻿using Cosmos.Core;
-using Cosmos.Core.IOGroup;
+﻿using BlyatOS.Library.Helpers;
+using Cosmos.Core;
+using Cosmos.Core.Memory;
 using Cosmos.HAL;
 using Cosmos.HAL.Audio;
 using Cosmos.HAL.Drivers.Audio;
@@ -8,116 +9,117 @@ using System;
 namespace CosmosAudioInfrastructure.HAL.Drivers.PCI.Audio
 {
     /// <summary>
-    /// Handles Sound Blaster 16 sound cards at a low-level.
+    /// Sound Blaster 16 Treiber - Low-Memory DMA Fix
     /// </summary>
     public unsafe sealed class SoundBlaster16 : AudioDriver
     {
-        // Sicherere Speicheradresse (1MB Marke)
-        private const int AUDIO_BUFFER_ADDRESS = 0x100000;
+        private AudioBuffer transferBuffer;
 
-        AudioBuffer backBuffer;
-        AudioBuffer buffer;
-        ushort bufferSize;
+        // DMA Buffer im Low-Memory (unter 16 MB)
+        private const uint DMABufferAddress = 0x00100000; // 1 MB
+        private const uint DMABufferMaxSize = 65536;      // 64 KB
+        private byte* dmaPtr => (byte*)DMABufferAddress;
 
-        // Port-Adressen (keine IOPort-Instanzen mehr!)
-        readonly ushort pMixer;
-        readonly ushort pMixerData;
-        readonly ushort pReset;
-        readonly ushort pRead;
-        readonly ushort pWrite;
-        readonly ushort p8BitIRQAck;
-        readonly ushort p16BitIRQAck;
+        private ushort bufferSizeSamples;
+        private int bufferSizeBytes;
+        private SampleFormat currentFormat;
 
-        const ushort pPICInterruptAcknowledge = 0x20;
-        const ushort pPICExtendedInterruptAcknowledge = 0xA0;
+        // Ports
+        private readonly ushort pMixer;
+        private readonly ushort pMixerData;
+        private readonly ushort pReset;
+        private readonly ushort pRead;
+        private readonly ushort pWrite;
+        private readonly ushort pReadStatus;
+        private readonly ushort pWriteStatus;
+        private readonly ushort p8BitIRQAck;
+        private readonly ushort p16BitIRQAck;
 
-        const int DSP_SET_TIME_CONSTANT = 0x40;
-        const int DSP_SET_OUTPUT_SAMPLE_RATE = 0x41;
-        const int DSP_TURN_SPEAKER_ON = 0xD1;
-        const int DSP_TURN_SPEAKER_OFF = 0xD3;
-        const int DSP_STOP_8BIT_CHANNEL = 0xD0;
-        const int DSP_RESUME_8BIT_CHANNEL = 0xD4;
-        const int DSP_STOP_16BIT_CHANNEL = 0xD5;
-        const int DSP_RESUME_16BIT_CHANNEL = 0xD6;
-        const int DSP_GET_VERSION = 0xE1;
+        private const ushort pPICInterruptAcknowledge = 0x20;
+        private const ushort pPICExtendedInterruptAcknowledge = 0xA0;
 
-        const int MIXER_SET_MASTER_VOLUME = 0x22;
-        const int MIXER_SET_IRQ = 0x80;
+        // DSP Commands
+        private const byte DSP_SET_OUTPUT_SAMPLE_RATE = 0x41;
+        private const byte DSP_TURN_SPEAKER_ON = 0xD1;
+        private const byte DSP_TURN_SPEAKER_OFF = 0xD3;
+        private const byte DSP_STOP_8BIT = 0xD0;
+        private const byte DSP_STOP_16BIT = 0xD5;
+        private const byte DSP_PAUSE_8BIT = 0xD0;
+        private const byte DSP_PAUSE_16BIT = 0xD5;
+        private const byte DSP_GET_VERSION = 0xE1;
 
-        const byte MIXER_IRQ_2 = 0x01;
-        const byte MIXER_IRQ_5 = 0x02;
-        const byte MIXER_IRQ_7 = 0x04;
-        const byte MIXER_IRQ_10 = 0x08;
+        // Mixer
+        private const byte MIXER_SET_MASTER_VOLUME = 0x22;
+        private const byte MIXER_SET_IRQ = 0x80;
+        private const byte MIXER_IRQ_5 = 0x02;
 
         public override IAudioBufferProvider BufferProvider { get; set; }
-
-        /// <summary>
-        /// The sampling rate of the driver.
-        /// </summary>
         public ushort SampleRate { get; set; } = 44100;
-
-        /// <summary>
-        /// The version of the Digital Signal Processor of the Sound Blaster 16. 
-        /// </summary>
         public Version DSPVersion { get; private set; }
 
-        private bool enabled;
+        private bool enabled = false;
         public override bool Enabled => enabled;
+
+        public static SoundBlaster16 Instance { get; private set; }
+
+        private int irqCount = 0;
 
         private SoundBlaster16(ushort bufferSize, SampleFormat format, ushort baseAddress = 0x220)
         {
-            this.bufferSize = bufferSize;
-
-            // Ports mit Base-Adresse initialisieren
+            // Ports initialisieren
             pMixer = (ushort)(baseAddress + 0x04);
             pMixerData = (ushort)(baseAddress + 0x05);
             pReset = (ushort)(baseAddress + 0x06);
             pRead = (ushort)(baseAddress + 0x0A);
             pWrite = (ushort)(baseAddress + 0x0C);
+            pReadStatus = (ushort)(baseAddress + 0x0E);
+            pWriteStatus = (ushort)(baseAddress + 0x0C);
             p8BitIRQAck = (ushort)(baseAddress + 0x0E);
             p16BitIRQAck = (ushort)(baseAddress + 0x0F);
 
-            Console.WriteLine($"[SB16] Base-Adresse: 0x{baseAddress:X3}");
+            ConsoleHelpers.WriteLine($"[SB16] Base: 0x{baseAddress:X3}");
 
+            // DSP Reset
             if (!ResetDSP())
-                throw new InvalidOperationException("No Sound Blaster 16 device could be found - the DSP reset check has failed.");
+                throw new InvalidOperationException("SB16: DSP Reset fehlgeschlagen!");
 
-            Console.WriteLine("[SB16] DSP wurde zurückgesetzt.");
+            // DSP Version auslesen
+            WriteDSP(DSP_GET_VERSION);
+            byte vMajor = ReadDSP();
+            byte vMinor = ReadDSP();
+            DSPVersion = new Version(vMajor, vMinor);
+            ConsoleHelpers.WriteLine($"[SB16] DSP Version: {DSPVersion}");
 
-            // Get DSP Version
-            IOPort.Write8(pWrite, DSP_GET_VERSION);
-            byte versionMajor = IOPort.Read8(pRead);
-            byte versionMinor = IOPort.Read8(pRead);
-            DSPVersion = new Version(versionMajor, versionMinor);
-            Console.WriteLine($"[SB16] DSP Version: {DSPVersion}");
+            if (DSPVersion.Major < 4)
+                ConsoleHelpers.WriteLine($"[SB16] WARNUNG: DSP Version < 4.0");
 
-            // Set the IRQ the SB16 will trigger
+            // IRQ 5 konfigurieren und aktivieren
             IOPort.Write8(pMixer, MIXER_SET_IRQ);
-            IOPort.Write8(pMixerData, MIXER_IRQ_10);
+            IOPort.Write8(pMixerData, MIXER_IRQ_5);
 
-            // Set the IRQ handler itself
-            INTs.SetIrqHandler(10, HandleInterrupt);
+            // Interrupt Handler registrieren (VOR Enable!)
+            INTs.SetIrqHandler(5, HandleInterrupt);
 
-            // Create the buffer
-            SetSampleFormat(format);
+            // PIC unmask IRQ5
+            byte mask = IOPort.Read8(0x21);
+            mask &= 0xDF; // Clear bit 5 (IRQ5)
+            IOPort.Write8(0x21, mask);
+
+            ConsoleHelpers.WriteLine("[SB16] IRQ 5 konfiguriert & unmaskiert");
+
+            // Buffer erstellen
+            this.currentFormat = format;
+            CreateBuffers(bufferSize);
+
+            ConsoleHelpers.WriteLine("[SB16] Init OK!");
         }
 
-        /// <summary>
-        /// The global instance of the Sound Blaster 16 driver.
-        /// </summary>
-        public static SoundBlaster16 Instance { get; private set; } = null;
-
-        /// <summary>
-        /// Initializes the Sound Blaster 16 driver.
-        /// </summary>
         public static SoundBlaster16 Initialize(ushort bufferSize, SampleFormat format, ushort baseAddress = 0x220)
         {
             if (Instance != null)
             {
-                if (Instance.bufferSize != bufferSize)
-                {
+                if (Instance.bufferSizeSamples != bufferSize)
                     Instance.ChangeBufferSize(bufferSize);
-                }
                 return Instance;
             }
 
@@ -125,288 +127,254 @@ namespace CosmosAudioInfrastructure.HAL.Drivers.PCI.Audio
             return Instance;
         }
 
-        /// <summary>
-        /// Testet verschiedene Base-Adressen
-        /// </summary>
-        public static ushort? DetectBaseAddress()
+        private void CreateBuffers(ushort bufferSize)
         {
-            ushort[] possibleAddresses = { 0x220, 0x240, 0x260, 0x280 };
+            transferBuffer = new AudioBuffer(bufferSize, currentFormat);
+            bufferSizeSamples = bufferSize;
+            bufferSizeBytes = bufferSize * currentFormat.Size;
 
-            Console.WriteLine("[SB16] Suche nach Sound Blaster 16...");
+            if (bufferSizeBytes > DMABufferMaxSize)
+                throw new ArgumentException($"Buffer zu groß! Max: {DMABufferMaxSize}");
 
-            foreach (var baseAddr in possibleAddresses)
-            {
-                Console.WriteLine($"[SB16] Teste Base-Adresse: 0x{baseAddr:X3}");
-
-                try
-                {
-                    ushort resetPort = (ushort)(baseAddr + 0x06);
-                    ushort readPort = (ushort)(baseAddr + 0x0A);
-
-                    // Reset versuchen
-                    IOPort.Write8(resetPort, 1);
-                    Cosmos.HAL.Global.PIT.Wait(3);
-                    IOPort.Write8(resetPort, 0);
-
-                    // Warte auf Ready-Signal
-                    for (int i = 0; i < 100; i++)
-                    {
-                        if (IOPort.Read8(readPort) == 0xAA)
-                        {
-                            Console.WriteLine($"[SB16] ✓ Gefunden bei 0x{baseAddr:X3}!");
-                            return baseAddr;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[SB16] ✗ Fehler bei 0x{baseAddr:X3}: {ex.Message}");
-                }
-            }
-
-            Console.WriteLine("[SB16] Kein Sound Blaster 16 gefunden!");
-            return null;
-        }
-
-        private void HandleInterrupt(ref INTs.IRQContext aContext)
-        {
-            if (!enabled)
-            {
-                IOPort.Write8(pWrite, 0xDA); // stop any 8-bit output
-                IOPort.Write8(pWrite, 0xD9); // stop any 16-bit output
-                return;
-            }
-
-            // Acknowledge IRQ
-            if (buffer.Format.BitDepth == AudioBitDepth.Bits8)
-            {
-                IOPort.Read8(p8BitIRQAck);
-            }
-            else
-            {
-                IOPort.Read8(p16BitIRQAck);
-            }
-
-            // Copy back buffer to main buffer
-            fixed (byte* backBufferPtr = backBuffer.RawData)
-            {
-                fixed (byte* bufferPtr = buffer.RawData)
-                {
-                    MemoryOperations.Copy(
-                        bufferPtr,
-                        backBufferPtr,
-                        buffer.RawData.Length
-                    );
-                }
-            }
-
-            // Request new buffer from provider
-            BufferProvider?.RequestBuffer(backBuffer);
+            // DMA-Buffer löschen
+            MemoryOperations.Fill(dmaPtr, 0x00, bufferSizeBytes);
+            ConsoleHelpers.WriteLine($"[SB16] Buffer: {bufferSizeSamples} samples = {bufferSizeBytes} bytes");
         }
 
         public void ChangeBufferSize(ushort newSize)
         {
-            Disable();
+            bool wasEnabled = enabled;
+            if (wasEnabled) Disable();
+            CreateBuffers(newSize);
+            if (wasEnabled) Enable();
+        }
 
-            bufferSize = newSize;
-            buffer = new AudioBuffer(newSize, buffer.Format);
-            backBuffer = new AudioBuffer(newSize, buffer.Format);
+        private bool ResetDSP()
+        {
+            // Reset senden
+            IOPort.Write8(pReset, 1);
+            for (int i = 0; i < 10000; i++) { }
+            IOPort.Write8(pReset, 0);
 
-            Enable();
+            // Warte auf 0xAA
+            for (int i = 0; i < 100000; i++)
+            {
+                if ((IOPort.Read8(pReadStatus) & 0x80) != 0)
+                {
+                    if (IOPort.Read8(pRead) == 0xAA)
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        private void WriteDSP(byte value)
+        {
+            for (int i = 0; i < 65536; i++)
+            {
+                if ((IOPort.Read8(pWriteStatus) & 0x80) == 0)
+                {
+                    IOPort.Write8(pWrite, value);
+                    return;
+                }
+            }
+            ConsoleHelpers.WriteLine($"[SB16] WriteDSP timeout: 0x{value:X2}");
+        }
+
+        private byte ReadDSP()
+        {
+            for (int i = 0; i < 65536; i++)
+            {
+                if ((IOPort.Read8(pReadStatus) & 0x80) != 0)
+                    return IOPort.Read8(pRead);
+            }
+            ConsoleHelpers.WriteLine("[SB16] ReadDSP timeout!");
+            return 0xFF;
+        }
+
+        private void HandleInterrupt(ref INTs.IRQContext aContext)
+        {
+            irqCount++;
+
+            // Debug IMMER ausgeben für erste 10 IRQs
+            if (irqCount <= 10)
+                ConsoleHelpers.WriteLine($"[SB16] !!! IRQ #{irqCount} !!!");
+
+
+            // DSP Interrupt bestätigen (WICHTIG: Vor PIC!)
+            if (currentFormat.BitDepth == AudioBitDepth.Bits8)
+                IOPort.Read8(p8BitIRQAck);
+            else
+                IOPort.Read8(p16BitIRQAck);
+
+            // PIC bestätigen
+            IOPort.Write8(pPICInterruptAcknowledge, 0x20);
+            IOPort.Write8(pPICExtendedInterruptAcknowledge, 0x20);
+
+            if (!enabled || BufferProvider == null)
+            {
+                if (irqCount <= 3)
+                    ConsoleHelpers.WriteLine($"[SB16] IRQ aber nicht enabled oder kein BufferProvider");
+                return;
+            }
+
+            try
+            {
+                // Neuen Buffer vom Provider holen
+                BufferProvider.RequestBuffer(transferBuffer);
+
+                // In DMA-Buffer kopieren
+                fixed (byte* srcPtr = transferBuffer.RawData)
+                {
+                    MemoryOperations.Copy(dmaPtr, srcPtr, bufferSizeBytes);
+                }
+
+                // Debug: Erste paar Buffers
+                if (irqCount <= 3)
+                {
+                    ConsoleHelpers.WriteLine($"[SB16] Buffer copied, first bytes: {transferBuffer.RawData[0]}, {transferBuffer.RawData[1]}, {transferBuffer.RawData[100]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                ConsoleHelpers.WriteLine($"[SB16] IRQ Error: {ex.Message}");
+            }
         }
 
         public override void Enable()
         {
-            // Set max volume
+            if (enabled)
+                return;
+
+            ConsoleHelpers.WriteLine("[SB16] === ENABLE START ===");
+
+            // Master Volume
             IOPort.Write8(pMixer, MIXER_SET_MASTER_VOLUME);
             IOPort.Write8(pMixerData, 0xFF);
+            ConsoleHelpers.WriteLine("[SB16] Volume: MAX");
+
+            // Speaker ON
+            WriteDSP(DSP_TURN_SPEAKER_ON);
+            ConsoleHelpers.WriteLine("[SB16] Speaker: ON");
+
+            // Sample Rate ZUERST setzen
+            WriteDSP(DSP_SET_OUTPUT_SAMPLE_RATE);
+            WriteDSP((byte)(SampleRate >> 8));
+            WriteDSP((byte)(SampleRate & 0xFF));
+            ConsoleHelpers.WriteLine($"[SB16] Sample Rate: {SampleRate} Hz");
+
+            // DANN DMA programmieren
+            ProgramDMA();
+
+            // DSP Command für Auto-Init DMA
+            bool is16bit = currentFormat.BitDepth == AudioBitDepth.Bits16;
+            byte command = is16bit ? (byte)0xB6 : (byte)0xC6;
+            WriteDSP(command);
+            ConsoleHelpers.WriteLine($"[SB16] DSP Command: 0x{command:X2}");
+
+            // Mode: Stereo/Mono + Signed
+            byte mode = (byte)((currentFormat.Channels == 2 ? 0x20 : 0x00) | 0x10);
+            WriteDSP(mode);
+            ConsoleHelpers.WriteLine($"[SB16] Mode: 0x{mode:X2} ({(currentFormat.Channels == 2 ? "Stereo" : "Mono")}, Signed)");
+
+            // Buffer Length in Samples - 1
+            ushort samples = (ushort)(bufferSizeSamples - 1);
+            WriteDSP((byte)(samples & 0xFF));
+            WriteDSP((byte)(samples >> 8));
+            ConsoleHelpers.WriteLine($"[SB16] Samples: {bufferSizeSamples}");
 
             enabled = true;
-            Start();
-            Console.WriteLine("[SB16] Aktiviert.");
+            irqCount = 0;
+            ConsoleHelpers.WriteLine("[SB16] === ENABLE DONE ===");
+            ConsoleHelpers.WriteLine("[SB16] Warte auf IRQs...");
         }
 
         public override void Disable()
         {
-            IOPort.Write8(pWrite, DSP_STOP_16BIT_CHANNEL);
-            IOPort.Write8(pWrite, DSP_STOP_8BIT_CHANNEL);
+            if (!enabled)
+                return;
+
             enabled = false;
-            Console.WriteLine("[SB16] Deaktiviert.");
+
+            // Stoppe DMA
+            if (currentFormat.BitDepth == AudioBitDepth.Bits8)
+                WriteDSP(DSP_STOP_8BIT);
+            else
+                WriteDSP(DSP_STOP_16BIT);
+
+            // Speaker OFF
+            WriteDSP(DSP_TURN_SPEAKER_OFF);
+
+            ConsoleHelpers.WriteLine("[SB16] Disabled");
         }
 
-        /// <summary>
-        /// Resets the DSP of the Sound Blaster 16.
-        /// </summary>
-        private bool ResetDSP()
+        private void ProgramDMA()
         {
-            IOPort.Write8(pReset, 1);
-            Cosmos.HAL.Global.PIT.Wait(3);
-            IOPort.Write8(pReset, 0);
+            bool is16bit = currentFormat.BitDepth == AudioBitDepth.Bits16;
+            uint physAddr = DMABufferAddress;
 
-            return IOPort.Read8(pRead) == 0xAA;
-        }
+            ConsoleHelpers.WriteLine($"[SB16] DMA Buffer @ 0x{physAddr:X8}");
 
-        /// <summary>
-        /// Starts the data transfer operation.
-        /// </summary>
-        private void Start()
-        {
-            Console.WriteLine("[SB16] Starte Sound Blaster 16...");
-            IOPort.Write8(pWrite, DSP_TURN_SPEAKER_ON);
-            ProgramDMATransfer(buffer.Format.BitDepth);
-
-            // Set the sample rate
-            IOPort.Write8(pWrite, 0x41);
-            IOPort.Write8(pWrite, Hi(SampleRate));
-            IOPort.Write8(pWrite, Lo(SampleRate));
-
-            // Set the bit-depth
-            IOPort.Write8(pWrite, buffer.Format.BitDepth == AudioBitDepth.Bits8 ? (byte)0xC6 : (byte)0xB6);
-
-            // Set the channel number (stereo or mono) and if it's signed.
-            switch (buffer.Format.Channels)
+            if (is16bit)
             {
-                case 1:
-                    if (buffer.Format.Signed)
-                        IOPort.Write8(pWrite, 0b00_01_0000);
-                    else
-                        IOPort.Write8(pWrite, 0b00_00_0000);
-                    break;
-                case 2:
-                    if (buffer.Format.Signed)
-                        IOPort.Write8(pWrite, 0b00_11_0000);
-                    else
-                        IOPort.Write8(pWrite, 0b00_10_0000);
-                    break;
-                default:
-                    throw new NotSupportedException($"Unsupported amount of channels ({buffer.Format.Channels}).");
+                // 16-Bit: DMA Channel 5
+                uint dmaAddr = physAddr >> 1;  // Word-Adresse
+                uint count = ((uint)bufferSizeBytes >> 1) - 1; // Words - 1
+
+                ConsoleHelpers.WriteLine($"[SB16] DMA16: Ch5, Addr=0x{dmaAddr:X}, Count={count} words");
+
+                IOPort.Write8(0xD4, 0x05);    // Mask Ch5
+                IOPort.Write8(0xD8, 0xFF);    // Flip-Flop
+                IOPort.Write8(0xD6, 0x59);    // Mode: Auto, Read, Ch5
+
+                IOPort.Write8(0x8B, (byte)(physAddr >> 16)); // Page (physical!)
+                IOPort.Write8(0xC4, (byte)(dmaAddr & 0xFF));
+                IOPort.Write8(0xC4, (byte)(dmaAddr >> 8));
+                IOPort.Write8(0xC6, (byte)(count & 0xFF));
+                IOPort.Write8(0xC6, (byte)(count >> 8));
+
+                IOPort.Write8(0xD4, 0x01);    // Unmask Ch5
+            }
+            else
+            {
+                // 8-Bit: DMA Channel 1
+                uint count = (uint)bufferSizeBytes - 1;
+
+                ConsoleHelpers.WriteLine($"[SB16] DMA8: Ch1, Addr=0x{physAddr:X}, Count={count} bytes");
+
+                IOPort.Write8(0x0A, 0x05);    // Mask Ch1
+                IOPort.Write8(0x0C, 0xFF);    // Flip-Flop
+                IOPort.Write8(0x0B, 0x49);    // Mode: Auto, Read, Ch1
+
+                IOPort.Write8(0x83, (byte)(physAddr >> 16)); // Page
+                IOPort.Write8(0x02, (byte)(physAddr & 0xFF));
+                IOPort.Write8(0x02, (byte)(physAddr >> 8));
+                IOPort.Write8(0x03, (byte)(count & 0xFF));
+                IOPort.Write8(0x03, (byte)(count >> 8));
+
+                IOPort.Write8(0x0A, 0x01);    // Unmask Ch1
             }
 
-            // Set data size
-            IOPort.Write8(pWrite, Lo((uint)bufferSize - 1));
-            IOPort.Write8(pWrite, Hi((uint)bufferSize - 1));
-            Console.WriteLine("[SB16] Start-Routine abgeschlossen.");
+            ConsoleHelpers.WriteLine("[SB16] DMA programmed");
         }
-
-        /// <summary>
-        /// Programs the DMA channel for audio buffer transfer.
-        /// </summary>
-        private void ProgramDMATransfer(AudioBitDepth bitDepth)
-        {
-            switch (bitDepth)
-            {
-                case AudioBitDepth.Bits8:
-                    ProgramDMATransfer(
-                        enableDisablePort: 0x0A,
-                        flipFlopPort: 0x0C,
-                        transferModePort: 0x0B,
-                        pagePort: 0x83,
-                        addressPort: 0x02,
-                        lengthPort: 0x03
-                    );
-                    break;
-                case AudioBitDepth.Bits16:
-                    ProgramDMATransfer(
-                        enableDisablePort: 0xD4,
-                        flipFlopPort: 0xD8,
-                        transferModePort: 0xD6,
-                        pagePort: 0x8B,
-                        addressPort: 0xC4,
-                        lengthPort: 0xC6
-                    );
-                    break;
-                default:
-                    throw new NotSupportedException("The Sound Blaster 16 only supports 8-bit and 16-bit DMA transfers.");
-            }
-        }
-
-        private unsafe void ProgramDMATransfer(
-            ushort enableDisablePort,
-            ushort flipFlopPort,
-            ushort transferModePort,
-            ushort pagePort,
-            ushort addressPort,
-            ushort lengthPort
-        )
-        {
-            // Fill both buffers
-            BufferProvider?.RequestBuffer(buffer);
-            BufferProvider?.RequestBuffer(backBuffer);
-
-            Console.WriteLine("[SB16] Programmiere DMA-Transfer.");
-
-            // Turn the channel off
-            IOPort.Write8(enableDisablePort, 0x05);
-
-            // Flip-flop
-            IOPort.Write8(flipFlopPort, 1);
-
-            // Set transfer-mode (auto mode, keeps playing and triggers interrupt)
-            IOPort.Write8(transferModePort, (byte)(0x58 + 1));
-
-            fixed (byte* bufferPtr = buffer.RawData)
-            {
-                uint address = (uint)bufferPtr;
-
-                if (address > 0xFFFFFF)
-                {
-                    throw new InvalidOperationException($"The Sound Blaster 16 cannot access memory addresses beyond 0xFFFFFF (given address 0x{address:X8})");
-                }
-
-                Console.WriteLine($"[SB16] Buffer liegt bei 0x{address:X8}.");
-
-                // Set page, address low and high
-                IOPort.Write8(pagePort, (byte)(address >> 4 >> 12));
-                IOPort.Write8(addressPort, Lo(address));
-                IOPort.Write8(addressPort, Hi(address));
-            }
-
-            // Set length
-            IOPort.Write8(lengthPort, Lo((uint)buffer.RawData.Length));
-            IOPort.Write8(lengthPort, Hi((uint)buffer.RawData.Length));
-
-            // Enable channel
-            IOPort.Write8(enableDisablePort, 1);
-            Console.WriteLine("[SB16] DMA wurde programmiert.");
-        }
-
-        static byte Hi(ushort val) => (byte)(val >> 8);
-        static byte Hi(uint val) => (byte)((val >> 8) & 0xff);
-        static byte Lo(uint val) => (byte)(val & 0xff);
-        static byte Lo(ushort val) => (byte)(val & 0xff);
 
         public override SampleFormat[] GetSupportedSampleFormats()
-            => new SampleFormat[]
+        {
+            return new SampleFormat[]
             {
-                new SampleFormat(AudioBitDepth.Bits8, 1, true),
-                new SampleFormat(AudioBitDepth.Bits8, 2, true),
-                new SampleFormat(AudioBitDepth.Bits8, 1, false),
-                new SampleFormat(AudioBitDepth.Bits8, 2, false),
-                new SampleFormat(AudioBitDepth.Bits16, 1, true),
                 new SampleFormat(AudioBitDepth.Bits16, 2, true),
-                new SampleFormat(AudioBitDepth.Bits16, 1, false),
-                new SampleFormat(AudioBitDepth.Bits16, 2, false),
+                new SampleFormat(AudioBitDepth.Bits16, 1, true),
+                new SampleFormat(AudioBitDepth.Bits8, 2, true),
+                new SampleFormat(AudioBitDepth.Bits8, 1, true)
             };
+        }
 
         public override void SetSampleFormat(SampleFormat sampleFormat)
         {
-            if (sampleFormat.BitDepth != AudioBitDepth.Bits8 && sampleFormat.BitDepth != AudioBitDepth.Bits16)
-                throw new NotSupportedException("The Sound Blaster 16 only supports 8-bit and 16-bit audio.");
-
-            if (sampleFormat.Channels == 0)
-                throw new NotSupportedException("The Sound Blaster 16 does not support null audio output (0 channels).");
-
-            if (sampleFormat.Channels > 2)
-                throw new NotSupportedException("The Sound Blaster 16 supports up to 2 channels.");
-
-            buffer = new AudioBuffer(bufferSize, sampleFormat);
-            backBuffer = new AudioBuffer(bufferSize, sampleFormat);
-
-            // Clear buffer
-            fixed (byte* bufPtr = buffer.RawData)
-            {
-                MemoryOperations.Fill(bufPtr, 0x00, buffer.RawData.Length);
-            }
+            if (enabled)
+                throw new InvalidOperationException("Kann Format nicht ändern während aktiv!");
+            currentFormat = sampleFormat;
+            CreateBuffers(bufferSizeSamples);
         }
     }
 }

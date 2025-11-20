@@ -11,8 +11,8 @@ namespace BlyatOS.Library.Configs
     public static class DisplaySettings
     {
         // Default values for Cosmos
-        private static uint _screenWidth = 80 * 8;  // 80 columns * 8px font width
-        private static uint _screenHeight = 25 * 16; // 25 rows * 16px font height
+        private static uint _screenWidth = 1024;
+        private static uint _screenHeight = 768;
         private static ColorDepth _colorDepth = ColorDepth.ColorDepth32;
         private static Color _backgroundColor = Color.Black;
         private static Color _foregroundColor = Color.White;

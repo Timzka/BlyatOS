@@ -48,28 +48,17 @@ public class Kernel : Sys.Kernel
 
     protected override void BeforeRun()
     {
+        InitializeGraphics();
+        AudioHandler.Initialize(AudioDriverType.SoundBlaster16, debug:true);
+        Console.ReadKey();
         
         // Initialize display settings and graphics1024x768
-        DisplaySettings.ScreenWidth = 1024;
-        DisplaySettings.ScreenHeight = 768;
         Global.PIT.Wait(10);
         Ressourceloader.InitRessources();
-        InitializeGraphics();
-        var baseAddr = SoundBlaster16.DetectBaseAddress();
-        if (baseAddr != null)
-        {
-            AudioHandler.Initialize(AudioDriverType.SoundBlaster16, debug: true);
-            Console.ReadKey();
-        }
-        else
-        {
-            ConsoleHelpers.WriteLine("could not find baseAddr");
-            Console.ReadKey();
-        }
         Global.PIT.Wait(1000);
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
-       
+        var temp = false;
         Global.PIT.Wait(1000);
         LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
         if (LOCKED)
@@ -86,6 +75,7 @@ public class Kernel : Sys.Kernel
                 Cosmos.System.Power.Reboot();
             }
             LOCKED = false;
+            temp = true;
             ConsoleHelpers.WriteLine("Press any key to continue...", Color.White);
             ConsoleHelpers.ReadKey();
             Global.PIT.Wait(1000);
@@ -94,7 +84,7 @@ public class Kernel : Sys.Kernel
 
         OnStartUp.RunLoadingScreenThing();
         Global.PIT.Wait(1);
-        //StartupScreen.Show();
+        if(!temp)StartupScreen.Show();
 
         Sys.KeyboardManager.SetKeyLayout(new DEStandardLayout());
 
@@ -161,6 +151,11 @@ public class Kernel : Sys.Kernel
                     case "musictest":
                         {
                             AudioHandler.Play(Audio.MainMusic);
+                            break;
+                        }
+                    case "getdriver":
+                        {
+                            AudioHandler.GetDriverInfo();
                             break;
                         }
                     case "stopmusic":
