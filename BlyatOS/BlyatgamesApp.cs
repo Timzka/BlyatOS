@@ -44,6 +44,18 @@ namespace BlyatOS
                             break;
                         }
 
+                    case "pacman":
+                    case "pac-man":
+                        {
+                            ConsoleHelpers.ClearConsole();
+                            ConsoleHelpers.WriteLine("Starting Pac-Man...");
+                            Global.PIT.Wait(100);
+                            PacMan game = new PacMan();
+                            game.Run();
+                            ConsoleHelpers.ClearConsole();
+                            break;
+                        }
+
                     case "wiseman":
                         {
                             ConsoleHelpers.ClearConsole();

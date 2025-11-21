@@ -85,6 +85,7 @@ public class BasicFunctions
                 return new List<Commands>
                 {
                     new Commands("tetris", "starts a game of tetris"),
+                    new Commands("pacman | pac-man", "starts a game of pac-man"),
                     new Commands("wiseman", "get a motivational message"),
                     new Commands("OOGA <filepath>", "jumpscare"),
                     new Commands("screensave <number> <filepath>", "animated screensaver with multiple bouncing images (default: 1)"),
