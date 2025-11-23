@@ -50,7 +50,7 @@ namespace BlyatOS.Library.Ressources
                     try
                     {
                         if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Versuche AC97 zu initialisieren...");
-                        ac97Driver = AC97.Initialize(bufferSize: 4096);
+                        ac97Driver = AC97.Initialize(bufferSize: 8192);
 
                         manager = new Cosmos.System.Audio.AudioManager()
                         {

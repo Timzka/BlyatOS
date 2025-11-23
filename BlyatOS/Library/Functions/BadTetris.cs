@@ -484,15 +484,18 @@ public class BadTetris
         // Title Musik abspielen
         PlayMusic(Audio.Title, true);
 
-        string title = "TETRIS";
-        string subtitle = "Classic Edition";
-        string pressKey = "Press any key to start";
-
         int centerX = (int)DisplaySettings.ScreenWidth / 2;
         int centerY = (int)DisplaySettings.ScreenHeight / 2;
 
-        canvas.DrawString(title, font, Color.Cyan,
-            centerX - (title.Length * font.Width / 2), centerY - 100);
+        // Tetris-Logo anzeigen
+        var logo = BMP.TetrisLogo;
+        int logoX = centerX - (int)(logo.Width / 2);
+        int logoY = centerY - 150;
+        canvas.DrawImage(logo, logoX, logoY);
+
+        string subtitle = "Classic Edition";
+        string pressKey = "Press any key to start";
+
         canvas.DrawString(subtitle, font, Color.White,
             centerX - (subtitle.Length * font.Width / 2), centerY - 70);
 
@@ -522,11 +525,17 @@ public class BadTetris
 
         canvas.Display();
 
+        int ir = 0;
         // Warte auf Tastendruck mit Musik-Loop
         while (!Sys.KeyboardManager.KeyAvailable)
         {
-            UpdateMusicLoop();
+            if (ir == 10)
+            { 
+                UpdateMusicLoop();
+                ir = 0;
+            }
             Global.PIT.Wait(10);
+            ir++;
         }
         Sys.KeyboardManager.ReadKey();
     }
@@ -595,7 +604,7 @@ public class BadTetris
         // Warte bis GameOver Musik fertig ist
         while (AudioHandler.IsPlaying)
         {
-            Global.PIT.Wait(10);
+            Global.PIT.Wait(100);
         }
 
         // Falls Highscore, spiele Highscore Musik

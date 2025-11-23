@@ -49,7 +49,7 @@ public class Kernel : Sys.Kernel
     protected override void BeforeRun()
     {
         InitializeGraphics();
-        AudioHandler.Initialize(AudioDriverType.AC97, debug:true);
+        AudioHandler.Initialize(AudioDriverType.AC97, debug:false);
         
         // Initialize display settings and graphics1024x768
         Global.PIT.Wait(10);
