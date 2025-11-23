@@ -1,12 +1,12 @@
 using System;
 using BlyatOS.Library.Configs;
+using BlyatOS.Library.Ressources;
 using Sys = Cosmos.System;
 
 namespace BlyatOS.Library.Startupthings
 {
     public class StartupScreen
     {
-        private static readonly string LogoPath = @"0:\blyatos\blyatlogo.bmp";
         private static readonly string PromptText = "Press any key to Login";
         private static readonly string PlaceholderText = "[ blyatlogo.bmp missing ]";
 
@@ -21,12 +21,9 @@ namespace BlyatOS.Library.Startupthings
             bool logoDisplayed = false;
             uint logoBottomY = 0;
 
-            // === Versuch, das Logo zu laden ===
-            if (Sys.FileSystem.VFS.VFSManager.FileExists(LogoPath))
-            {
                 try
                 {
-                    var logo = ImageHelpers.LoadBMP(LogoPath);
+                    var logo = BMP.BlyatLogo;
 
                     int x = (int)((DisplaySettings.ScreenWidth - logo.Width) / 2);
                     int y = (int)((DisplaySettings.ScreenHeight - logo.Height) / 3);
@@ -39,7 +36,6 @@ namespace BlyatOS.Library.Startupthings
                 {
                     logoDisplayed = false;
                 }
-            }
 
             // === Falls kein Logo vorhanden, Placeholder-Text anzeigen ===
             if (!logoDisplayed)

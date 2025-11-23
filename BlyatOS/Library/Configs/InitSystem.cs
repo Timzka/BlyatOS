@@ -68,12 +68,6 @@ internal class InitSystem
             //File.WriteAllText(Path.Combine(syspath, "systemconfig.nahui"), "");
             ConsoleHelpers.WriteLine("systemconfig.nahui erstellt");
 
-            if (!VFSManager.FileExists(Path.Combine(syspath, "blyatlogo.bmp")))
-            {
-                BitMaps.BlyatLogo.Save(Path.Combine(syspath, "blyatlogo.bmp"));
-                ConsoleHelpers.WriteLine("blyatlogo.bmp erstellt");
-            }
-
             ConsoleHelpers.WriteLine("Init is done!");
             return true;
         }

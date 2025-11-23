@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
+using BlyatOS.Library.Helpers;
 using Cosmos.System.Audio.IO;
 using Cosmos.System.Graphics;
 using IL2CPU.API.Attribs;
@@ -26,7 +28,8 @@ public static class Ressourceloader
     private const string defaultPathBMP = "BlyatOS.Library.Ressources.FilesBMP.";
     [ManifestResourceStream(ResourceName = defaultPathBMP + "TetrisLogo.bmp")]
     public static byte[] TetrisLogoBmpBytes;
-
+    [ManifestResourceStream(ResourceName = defaultPathBMP + "BlyatLogo.bmp")]
+    public static byte[] BlyatLogoBmpBytes;
     public static void InitRessources()
     {
         try
@@ -43,14 +46,15 @@ public static class Ressourceloader
             Console.WriteLine("Loading GameOver audio...");
             Audio.GameOver = MemoryAudioStream.FromWave(GameOverWavBytes);
 
-            //Console.WriteLine("Loading BMP resources...");
-            //BMP.TetrisLogo = new Bitmap(TetrisLogoBmpBytes);
+            Console.WriteLine("Loading BMP resources...");
+            BMP.TetrisLogo = new Bitmap(TetrisLogoBmpBytes);
+            BMP.BlyatLogo = ImageHelpers.ConvertBMP(new Bitmap(BlyatLogoBmpBytes));
 
             Console.WriteLine("All resources loaded!");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading resources: {ex.Message}");
+            ConsoleHelpers.WriteLine($"Error loading resources: {ex.Message}");
         }
     }
 }

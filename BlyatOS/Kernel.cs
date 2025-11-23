@@ -49,8 +49,7 @@ public class Kernel : Sys.Kernel
     protected override void BeforeRun()
     {
         InitializeGraphics();
-        AudioHandler.Initialize(AudioDriverType.SoundBlaster16, debug:true);
-        Console.ReadKey();
+        AudioHandler.Initialize(AudioDriverType.AC97, debug:true);
         
         // Initialize display settings and graphics1024x768
         Global.PIT.Wait(10);
@@ -58,33 +57,31 @@ public class Kernel : Sys.Kernel
         Global.PIT.Wait(1000);
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
-        var temp = false;
         Global.PIT.Wait(1000);
-        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
-        if (LOCKED)
-        {
-            ConsoleHelpers.WriteLine("WARNING: System is locked!", Color.Red);
-            ConsoleHelpers.WriteLine("Some system files are missing or corrupted.", Color.Yellow);
-            ConsoleHelpers.WriteLine("Running system initialization...\n", Color.White);
-            Global.PIT.Wait(1000);
-            if (InitSystem.InitSystemData(SYSTEMPATH, fs))
-            {
-                ConsoleHelpers.WriteLine("System initialized successfully!", Color.Green);
-                ConsoleHelpers.WriteLine("Press any key to reboot...", Color.White);
-                ConsoleHelpers.ReadKey();
-                Cosmos.System.Power.Reboot();
-            }
-            LOCKED = false;
-            temp = true;
-            ConsoleHelpers.WriteLine("Press any key to continue...", Color.White);
-            ConsoleHelpers.ReadKey();
-            Global.PIT.Wait(1000);
-        }
+        //LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
+        //if (LOCKED)
+        //{
+        //    ConsoleHelpers.WriteLine("WARNING: System is locked!", Color.Red);
+        //    ConsoleHelpers.WriteLine("Some system files are missing or corrupted.", Color.Yellow);
+        //    ConsoleHelpers.WriteLine("Running system initialization...\n", Color.White);
+        //    Global.PIT.Wait(1000);
+        //    if (InitSystem.InitSystemData(SYSTEMPATH, fs))
+        //    {
+        //        ConsoleHelpers.WriteLine("System initialized successfully!", Color.Green);
+        //        ConsoleHelpers.WriteLine("Press any key to reboot...", Color.White);
+        //        ConsoleHelpers.ReadKey();
+        //        Cosmos.System.Power.Reboot();
+        //    }
+        //    LOCKED = false;
+        //    ConsoleHelpers.WriteLine("Press any key to continue...", Color.White);
+        //    ConsoleHelpers.ReadKey();
+        //    Global.PIT.Wait(1000);
+        //}
         Global.PIT.Wait(10);
 
         OnStartUp.RunLoadingScreenThing();
         Global.PIT.Wait(1);
-        if(!temp)StartupScreen.Show();
+        StartupScreen.Show();
 
         Sys.KeyboardManager.SetKeyLayout(new DEStandardLayout());
 

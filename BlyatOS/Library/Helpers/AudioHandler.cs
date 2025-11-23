@@ -12,7 +12,7 @@ namespace BlyatOS.Library.Ressources
     public enum AudioDriverType
     {
         AC97,
-        SoundBlaster16,
+        //SoundBlaster16, //doesnt work as of now
         Auto
     }
 
@@ -70,47 +70,47 @@ namespace BlyatOS.Library.Ressources
                 }
 
                 // Falls AC97 fehlschlägt oder SB16 explizit gewünscht
-                if (!driverInitialized && (driverType == AudioDriverType.Auto || driverType == AudioDriverType.SoundBlaster16))
-                {
-                    try
-                    {
-                        if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Versuche Sound Blaster 16 zu initialisieren...");
+                //if (!driverInitialized && (driverType == AudioDriverType.Auto || driverType == AudioDriverType.SoundBlaster16))
+                //{
+                //    try
+                //    {
+                //        if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Versuche Sound Blaster 16 zu initialisieren...");
 
-                        // Versuche zuerst Auto-Detection
-                        ushort? baseAddr = 0x220;//SoundBlaster16.DetectBaseAddress();
-                        if (baseAddr == null && driverType == AudioDriverType.SoundBlaster16)
-                        {
-                            // Wenn explizit gewünscht, versuche Standardadresse
-                            if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Auto-Detection fehlgeschlagen, versuche 0x220...");
-                            baseAddr = 0x220;
-                        }
+                //        // Versuche zuerst Auto-Detection
+                //        ushort? baseAddr = 0x220;//SoundBlaster16.DetectBaseAddress();
+                //        if (baseAddr == null && driverType == AudioDriverType.SoundBlaster16)
+                //        {
+                //            // Wenn explizit gewünscht, versuche Standardadresse
+                //            if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Auto-Detection fehlgeschlagen, versuche 0x220...");
+                //            baseAddr = 0x220;
+                //        }
 
-                        if (baseAddr != null)
-                        {
-                            // SB16 mit 16-bit Stereo signed initialisieren (ähnlich wie AC97)
-                            sb16Driver = SoundBlaster16.Initialize(
-                                bufferSize: 4096,
-                                format: new SampleFormat(AudioBitDepth.Bits16, 2, true),
-                                baseAddress: baseAddr.Value
-                            );
+                //        if (baseAddr != null)
+                //        {
+                //            // SB16 mit 16-bit Stereo signed initialisieren (ähnlich wie AC97)
+                //            sb16Driver = SoundBlaster16.Initialize(
+                //                bufferSize: 4096,
+                //                format: new SampleFormat(AudioBitDepth.Bits16, 2, true),
+                //                baseAddress: baseAddr.Value
+                //            );
 
-                            manager = new Cosmos.System.Audio.AudioManager()
-                            {
-                                Stream = mixer,
-                                Output = sb16Driver
-                            };
+                //            manager = new Cosmos.System.Audio.AudioManager()
+                //            {
+                //                Stream = mixer,
+                //                Output = sb16Driver
+                //            };
 
-                            // BufferProvider wird vom AudioManager gesetzt
-                            currentDriver = AudioDriverType.SoundBlaster16;
-                            driverInitialized = true;
-                            if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Sound Blaster 16 erfolgreich initialisiert (DSP Version: {sb16Driver.DSPVersion})");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Sound Blaster 16 nicht verfügbar: {ex.Message}");
-                    }
-                }
+                //            // BufferProvider wird vom AudioManager gesetzt
+                //            currentDriver = AudioDriverType.SoundBlaster16;
+                //            driverInitialized = true;
+                //            if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Sound Blaster 16 erfolgreich initialisiert (DSP Version: {sb16Driver.DSPVersion})");
+                //        }
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Sound Blaster 16 nicht verfügbar: {ex.Message}");
+                //    }
+                //}
 
                 if (!driverInitialized)
                 {
@@ -268,8 +268,8 @@ namespace BlyatOS.Library.Ressources
             {
                 case AudioDriverType.AC97:
                     return "AC97 Audio Controller";
-                case AudioDriverType.SoundBlaster16:
-                    return $"Sound Blaster 16 (DSP v{sb16Driver?.DSPVersion})";
+                //case AudioDriverType.SoundBlaster16:
+                //    return $"Sound Blaster 16 (DSP v{sb16Driver?.DSPVersion})";
                 default:
                     return "Unbekannt";
             }

@@ -6,6 +6,7 @@ using BadTetrisCS;
 using BlyatOS.Library.Configs;
 using BlyatOS.Library.Functions;
 using BlyatOS.Library.Helpers;
+using BlyatOS.Library.Ressources;
 using Cosmos.HAL;
 using Cosmos.System.Graphics;
 
@@ -70,7 +71,7 @@ namespace BlyatOS
                             if (path != "" && File.Exists(path))
                                 bitmap = ImageHelpers.LoadBMP(path);
                             else
-                                bitmap = ImageHelpers.LoadBMP(@"0:\Blyatos\blyatlogo.bmp");
+                                bitmap = BMP.BlyatLogo;
 
                             int screenWidth = (int)DisplaySettings.ScreenWidth;
                             int screenHeight = (int)DisplaySettings.ScreenHeight;
@@ -80,8 +81,8 @@ namespace BlyatOS
                                 if (Cosmos.System.KeyboardManager.TryReadKey(out var _))
                                     break;
 
-                                int x = rand.Next(0, Math.Max(1, screenWidth - 200));
-                                int y = rand.Next(0, Math.Max(1, screenHeight - 200));
+                                int x = rand.Next(0, Math.Max(1, screenWidth - (int)bitmap.Width));
+                                int y = rand.Next(0, Math.Max(1, screenHeight - (int)bitmap.Height));
 
                                 canvas.DrawImage(bitmap, x, y);
                                 canvas.Display();
@@ -105,7 +106,7 @@ namespace BlyatOS
                             if (path != "" && File.Exists(path))
                                 bitmap = ImageHelpers.LoadBMP(path);
                             else
-                                bitmap = ImageHelpers.LoadBMP(@"0:\Blyatos\blyatlogo.bmp");
+                                bitmap = BMP.BlyatLogo;
 
                             Console.Clear();
                             var canvas = DisplaySettings.Canvas;
@@ -118,13 +119,14 @@ namespace BlyatOS
                             int[] imageY = new int[numberOfImages];
                             int[] velocityX = new int[numberOfImages];
                             int[] velocityY = new int[numberOfImages];
-                            int imageSize = 128;
+                            int imageSizeW = (int)bitmap.Width;
+                            int imageSizeH = (int)bitmap.Height;
 
                             // Startpositionen und Geschwindigkeiten initialisieren
                             for (int i = 0; i < numberOfImages; i++)
                             {
-                                imageX[i] = rand.Next(imageSize, canvasWidth - imageSize);
-                                imageY[i] = rand.Next(imageSize, canvasHeight - imageSize);
+                                imageX[i] = rand.Next(imageSizeW, canvasWidth - imageSizeW);
+                                imageY[i] = rand.Next(imageSizeH, canvasHeight - imageSizeH);
 
                                 velocityX[i] = rand.Next(-5, 6);
                                 if (velocityX[i] == 0) velocityX[i] = 1;
@@ -155,10 +157,10 @@ namespace BlyatOS
                                     imageY[i] += velocityY[i];
 
                                     // Rand-Kollisionen prüfen
-                                    if (imageX[i] <= 0 || imageX[i] >= canvasWidth - imageSize)
+                                    if (imageX[i] <= 0 || imageX[i] >= canvasWidth - imageSizeW)
                                         velocityX[i] = -velocityX[i];
 
-                                    if (imageY[i] <= 0 || imageY[i] >= canvasHeight - imageSize)
+                                    if (imageY[i] <= 0 || imageY[i] >= canvasHeight - imageSizeH)
                                         velocityY[i] = -velocityY[i];
                                 }
 
