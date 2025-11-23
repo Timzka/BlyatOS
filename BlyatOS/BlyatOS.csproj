@@ -19,7 +19,8 @@
         <PxeInterface>192.168.0.8</PxeInterface>
         <DebugEnabled>False</DebugEnabled>
         <OptimizationLevel>1</OptimizationLevel>
-        <CompileVBEMultiboot>True</CompileVBEMultiboot>
+        <CompileVBEMultiboot>False</CompileVBEMultiboot>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -27,6 +28,7 @@
       <None Remove="Library\Ressources\FilesAudio\HighScore.wav" />
       <None Remove="Library\Ressources\FilesAudio\MainMusic.wav" />
       <None Remove="Library\Ressources\FilesAudio\Title.wav" />
+      <None Remove="Library\Ressources\FilesBMP\BlyatLogo.bmp" />
       <None Remove="Library\Ressources\FilesBMP\TetrisLogo.bmp" />
     </ItemGroup>
 
@@ -35,6 +37,7 @@
       <EmbeddedResource Include="Library\Ressources\FilesAudio\HighScore.wav" />
       <EmbeddedResource Include="Library\Ressources\FilesAudio\MainMusic.wav" />
       <EmbeddedResource Include="Library\Ressources\FilesAudio\Title.wav" />
+      <EmbeddedResource Include="Library\Ressources\FilesBMP\BlyatLogo.bmp" />
       <EmbeddedResource Include="Library\Ressources\FilesBMP\TetrisLogo.bmp" />
     </ItemGroup>
 

@@ -14,6 +14,7 @@ using Cosmos.HAL;
 using Cosmos.System.FileSystem.VFS;
 using Cosmos.System.Graphics;
 using Cosmos.System.ScanMaps;
+using CosmosAudioInfrastructure.HAL.Drivers.PCI.Audio;
 using static BlyatOS.PathHelpers;
 using Sys = Cosmos.System;
 
@@ -47,43 +48,40 @@ public class Kernel : Sys.Kernel
 
     protected override void BeforeRun()
     {
+        InitializeGraphics();
+        AudioHandler.Initialize(AudioDriverType.AC97, debug:false);
         
         // Initialize display settings and graphics1024x768
-        DisplaySettings.ScreenWidth = 1024;
-        DisplaySettings.ScreenHeight = 768;
         Global.PIT.Wait(10);
         Ressourceloader.InitRessources();
-        InitializeGraphics();
-        AudioHandler.Initialize();
         Global.PIT.Wait(1000);
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
-       
         Global.PIT.Wait(1000);
-        LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
-        if (LOCKED)
-        {
-            ConsoleHelpers.WriteLine("WARNING: System is locked!", Color.Red);
-            ConsoleHelpers.WriteLine("Some system files are missing or corrupted.", Color.Yellow);
-            ConsoleHelpers.WriteLine("Running system initialization...\n", Color.White);
-            Global.PIT.Wait(1000);
-            if (InitSystem.InitSystemData(SYSTEMPATH, fs))
-            {
-                ConsoleHelpers.WriteLine("System initialized successfully!", Color.Green);
-                ConsoleHelpers.WriteLine("Press any key to reboot...", Color.White);
-                ConsoleHelpers.ReadKey();
-                Cosmos.System.Power.Reboot();
-            }
-            LOCKED = false;
-            ConsoleHelpers.WriteLine("Press any key to continue...", Color.White);
-            ConsoleHelpers.ReadKey();
-            Global.PIT.Wait(1000);
-        }
+        //LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
+        //if (LOCKED)
+        //{
+        //    ConsoleHelpers.WriteLine("WARNING: System is locked!", Color.Red);
+        //    ConsoleHelpers.WriteLine("Some system files are missing or corrupted.", Color.Yellow);
+        //    ConsoleHelpers.WriteLine("Running system initialization...\n", Color.White);
+        //    Global.PIT.Wait(1000);
+        //    if (InitSystem.InitSystemData(SYSTEMPATH, fs))
+        //    {
+        //        ConsoleHelpers.WriteLine("System initialized successfully!", Color.Green);
+        //        ConsoleHelpers.WriteLine("Press any key to reboot...", Color.White);
+        //        ConsoleHelpers.ReadKey();
+        //        Cosmos.System.Power.Reboot();
+        //    }
+        //    LOCKED = false;
+        //    ConsoleHelpers.WriteLine("Press any key to continue...", Color.White);
+        //    ConsoleHelpers.ReadKey();
+        //    Global.PIT.Wait(1000);
+        //}
         Global.PIT.Wait(10);
 
         OnStartUp.RunLoadingScreenThing();
         Global.PIT.Wait(1);
-        //StartupScreen.Show();
+        StartupScreen.Show();
 
         Sys.KeyboardManager.SetKeyLayout(new DEStandardLayout());
 
@@ -150,6 +148,11 @@ public class Kernel : Sys.Kernel
                     case "musictest":
                         {
                             AudioHandler.Play(Audio.MainMusic);
+                            break;
+                        }
+                    case "getdriver":
+                        {
+                            AudioHandler.GetDriverInfo();
                             break;
                         }
                     case "stopmusic":

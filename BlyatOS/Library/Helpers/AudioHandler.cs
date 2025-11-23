@@ -1,52 +1,141 @@
 ﻿using System;
 using System.IO;
 using BlyatOS.Library.Helpers;
+using Cosmos.HAL.Audio;
 using Cosmos.HAL.Drivers.Audio;
 using Cosmos.System.Audio;
 using Cosmos.System.Audio.IO;
+using CosmosAudioInfrastructure.HAL.Drivers.PCI.Audio;
 
 namespace BlyatOS.Library.Ressources
 {
+    public enum AudioDriverType
+    {
+        AC97,
+        //SoundBlaster16, //doesnt work as of now
+        Auto
+    }
+
     public static class AudioHandler
     {
         private static AudioMixer? mixer;
         private static Cosmos.System.Audio.AudioManager? manager;
-        private static AC97? driver;
-        private static MemoryAudioStream? currentStream;
+        private static AC97? ac97Driver;
+        private static SoundBlaster16? sb16Driver;
+        private static MemoryAudioStream? currentStream; 
         private static bool isInitialized = false;
         private static bool _debug = false;
+        private static AudioDriverType currentDriver;
 
         /// <summary>
-        /// Initialisiert den AudioManager. Muss einmal beim Start aufgerufen werden.
+        /// Initialisiert den AudioManager mit automatischer Treibererkennung oder manuellem Treiber
         /// </summary>
-        public static bool Initialize(bool debug = false)
+        public static bool Initialize(AudioDriverType driverType = AudioDriverType.Auto, bool debug = false)
         {
             try
             {
                 if (isInitialized)
                     return true;
 
+                _debug = debug;
+
                 // AudioMixer erstellen
                 mixer = new AudioMixer();
 
-                // AC97 Driver initialisieren
-                driver = AC97.Initialize(bufferSize: 4096);
+                // Treiber initialisieren basierend auf Typ
+                bool driverInitialized = false;
 
-                // AudioManager erstellen und konfigurieren
-                manager = new Cosmos.System.Audio.AudioManager()
+                if (driverType == AudioDriverType.Auto || driverType == AudioDriverType.AC97)
                 {
-                    Stream = mixer,
-                    Output = driver
-                };
+                    try
+                    {
+                        if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Versuche AC97 zu initialisieren...");
+                        ac97Driver = AC97.Initialize(bufferSize: 8192);
 
-                // AudioManager aktivieren
-                manager.Enable();
+                        manager = new Cosmos.System.Audio.AudioManager()
+                        {
+                            Stream = mixer,
+                            Output = ac97Driver
+                        };
+
+                        // BufferProvider wird vom AudioManager gesetzt
+                        currentDriver = AudioDriverType.AC97;
+                        driverInitialized = true;
+                        if (_debug) ConsoleHelpers.WriteLine("[AudioManager] AC97 erfolgreich initialisiert");
+                    }
+                    catch (Exception ex)
+                    {
+                        if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] AC97 nicht verfügbar: {ex.Message}");
+                    }
+                }
+
+                // Falls AC97 fehlschlägt oder SB16 explizit gewünscht
+                //if (!driverInitialized && (driverType == AudioDriverType.Auto || driverType == AudioDriverType.SoundBlaster16))
+                //{
+                //    try
+                //    {
+                //        if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Versuche Sound Blaster 16 zu initialisieren...");
+
+                //        // Versuche zuerst Auto-Detection
+                //        ushort? baseAddr = 0x220;//SoundBlaster16.DetectBaseAddress();
+                //        if (baseAddr == null && driverType == AudioDriverType.SoundBlaster16)
+                //        {
+                //            // Wenn explizit gewünscht, versuche Standardadresse
+                //            if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Auto-Detection fehlgeschlagen, versuche 0x220...");
+                //            baseAddr = 0x220;
+                //        }
+
+                //        if (baseAddr != null)
+                //        {
+                //            // SB16 mit 16-bit Stereo signed initialisieren (ähnlich wie AC97)
+                //            sb16Driver = SoundBlaster16.Initialize(
+                //                bufferSize: 4096,
+                //                format: new SampleFormat(AudioBitDepth.Bits16, 2, true),
+                //                baseAddress: baseAddr.Value
+                //            );
+
+                //            manager = new Cosmos.System.Audio.AudioManager()
+                //            {
+                //                Stream = mixer,
+                //                Output = sb16Driver
+                //            };
+
+                //            // BufferProvider wird vom AudioManager gesetzt
+                //            currentDriver = AudioDriverType.SoundBlaster16;
+                //            driverInitialized = true;
+                //            if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Sound Blaster 16 erfolgreich initialisiert (DSP Version: {sb16Driver.DSPVersion})");
+                //        }
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Sound Blaster 16 nicht verfügbar: {ex.Message}");
+                //    }
+                //}
+
+                if (!driverInitialized)
+                {
+                    if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Kein Audio-Treiber verfügbar!");
+                    return false;
+                }
+
+                // AudioManager aktivieren - dies setzt automatisch den BufferProvider
+                if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Aktiviere AudioManager...");
+
+                try
+                {
+                    manager.Enable();
+                    if (_debug) ConsoleHelpers.WriteLine("[AudioManager] AudioManager erfolgreich aktiviert!");
+                }
+                catch (Exception ex)
+                {
+                    if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Fehler beim Aktivieren: {ex.Message}");
+                    return false;
+                }
 
                 isInitialized = true;
                 if (debug)
                 {
-                    _debug = true;
-                    ConsoleHelpers.WriteLine("[AudioManager] Erfolgreich initialisiert");
+                    //ConsoleHelpers.WriteLine($"[AudioManager] ✓ Erfolgreich initialisiert mit {currentDriver}");
                 }
                 return true;
             }
@@ -58,19 +147,24 @@ namespace BlyatOS.Library.Ressources
         }
 
         /// <summary>
+        /// Gibt den aktuell verwendeten Treiber zurück
+        /// </summary>
+        public static AudioDriverType CurrentDriver => currentDriver;
+
+        /// <summary>
         /// Spielt einen Audio-Stream ab
         /// </summary>
         public static void Play(MemoryAudioStream stream)
         {
             if (!isInitialized || mixer == null)
             {
-                if(_debug)ConsoleHelpers.WriteLine("[AudioManager] Nicht initialisiert!");
+                if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Nicht initialisiert!");
                 return;
             }
 
             try
             {
-                Stop(); // Stoppt alle musik
+                Stop(); // Stoppt alle Musik
 
                 currentStream = stream;
                 stream.Position = 0;
@@ -96,13 +190,14 @@ namespace BlyatOS.Library.Ressources
                 currentStream = stream;
                 stream.Position = 0;
                 mixer.Streams.Add(stream);
-                if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Wiedergabe gestartet");
+                if (_debug) ConsoleHelpers.WriteLine("[AudioManager] Stream hinzugefügt");
             }
             catch (Exception ex)
             {
-                if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Fehler beim Abspielen: {ex.Message}");
+                if (_debug) ConsoleHelpers.WriteLine($"[AudioManager] Fehler beim Hinzufügen: {ex.Message}");
             }
         }
+
         /// <summary>
         /// Stoppt die aktuelle Wiedergabe
         /// </summary>
@@ -160,5 +255,24 @@ namespace BlyatOS.Library.Ressources
         /// Gibt den AudioMixer zurück (für erweiterte Nutzung)
         /// </summary>
         public static AudioMixer? GetMixer() => mixer;
+
+        /// <summary>
+        /// Gibt Informationen über den aktuellen Treiber aus
+        /// </summary>
+        public static string GetDriverInfo()
+        {
+            if (!isInitialized)
+                return "Nicht initialisiert";
+
+            switch (currentDriver)
+            {
+                case AudioDriverType.AC97:
+                    return "AC97 Audio Controller";
+                //case AudioDriverType.SoundBlaster16:
+                //    return $"Sound Blaster 16 (DSP v{sb16Driver?.DSPVersion})";
+                default:
+                    return "Unbekannt";
+            }
+        }
     }
 }
