@@ -7,7 +7,8 @@ namespace BlyatOS;
 
 public class UserManagementApp
 {
-    public static void Run(int currentUser, UsersConfig usersConf)
+    //return 1 if user should re-login after the command, return 0 if not
+    public static int Run(int currentUser, UsersConfig usersConf, PasswordPolicy policy)
     {
         bool exitUserManager = false;
         ConsoleHelpers.ClearConsole();
@@ -57,6 +58,32 @@ public class UserManagementApp
                         UserManagement.DeleteUser(usersConf, currentUser);
                         break;
                     }
+                case "changePassword":
+                    {
+                        if (UserManagement.ChangePassword(currentUser, usersConf, policy) == true) //true if password changed
+                            return 1;
+                        else break;
+                    }
+                case "checkPolicy":
+                    {
+                        if (!UserManagement.CheckPermissions(currentUser, usersConf, UsersConfig.Permissions.Admin))
+                        {
+                            ConsoleHelpers.WriteLine("Missing Permissions");
+                            break;
+                        }
+                        policy.WritePolicy();
+                        break;
+                    }
+                case "changePolicy":
+                    {
+                        if (!UserManagement.CheckPermissions(currentUser, usersConf, UsersConfig.Permissions.Admin))
+                        {
+                            Console.WriteLine("Missing Permissions");
+                            break;
+                        }
+                        policy.SetPolicy();
+                        break;
+                    }
                 case "help":
                     {
                         Console.Clear();
@@ -79,5 +106,6 @@ public class UserManagementApp
                     }
             }
         } while (!exitUserManager);
+        return 0;
     }
 }

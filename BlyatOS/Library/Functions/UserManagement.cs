@@ -121,4 +121,34 @@ internal class UserManagement
             default: return "Unknown";
         }
     }
+
+    public static bool ChangePassword(int currUser, UsersConfig conf, PasswordPolicy policy)
+    {
+        policy.WritePolicy();
+        var current = conf.Users.FirstOrDefault(u => u.UId == currUser);
+        ConsoleHelpers.WriteLine("Enter current password: ");
+        string currPassword = ConsoleHelpers.ReadPassword();
+        if (current.Password != currPassword)
+        {
+            ConsoleHelpers.WriteLine("Incorrect password.");
+            return false;
+        }
+        ConsoleHelpers.WriteLine("Enter new password: ");
+        string newPassword = ConsoleHelpers.ReadPassword();
+        if (!policy.CheckPassword(newPassword))
+        {
+            ConsoleHelpers.WriteLine("Password does not meet policy requirements.");
+            return false;
+        }
+        ConsoleHelpers.WriteLine("Confirm Password by typing it again");
+        string confirmPassword = ConsoleHelpers.ReadPassword();
+        if (newPassword != confirmPassword)
+        {
+            ConsoleHelpers.WriteLine("Passwords do not match.");
+            return false;
+        }
+        conf.Users.RemoveAll(u => u.UId == currUser);
+        conf.Users.Add(new User(current.Username, current.UId, newPassword, current.Role));
+        return true;
+    }
 }

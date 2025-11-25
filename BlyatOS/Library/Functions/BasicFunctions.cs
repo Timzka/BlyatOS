@@ -100,6 +100,9 @@ public class BasicFunctions
                     new Commands("vodka", "admin command (not implemented)"),
                     new Commands("createUser", "create new user (admin only)"),
                     new Commands("deleteUser", "delete a user (admin only)"),
+                    new Commands("changePassword", "change your password"),
+                    new Commands("changePolicy", "change password policy (admin only)"),
+                    new Commands("checkPolicy", "check the currently set Password Policy (admin only)"),
                     new Commands("mainMenu | exit", "return to main menu")
                 };
 

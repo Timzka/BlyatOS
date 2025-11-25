@@ -151,7 +151,9 @@ public class KernelParser
                     }
                 case "userManagement":
                     {
-                        UserManagementApp.Run(kernel.CurrentUser, kernel.UsersConf);
+                        int result = UserManagementApp.Run(kernel.CurrentUser, kernel.UsersConf, kernel.Policy);
+                        if(result == 1)
+                            kernel.Logged_In = false; // Force re-login if needed
                         break;
                     }
                 case "blyatgames":

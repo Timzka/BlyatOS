@@ -382,7 +382,7 @@ namespace BlyatOS.Library.Helpers
             return result;
         }
 
-        public static string ReadPassword(string prompt = "Password: ", Color? promptColor = null, char maskChar = '*')
+        public static string ReadPassword(string prompt = "", Color? promptColor = null, char maskChar = '*')
         {
             Write(prompt, promptColor);
             var password = new StringBuilder();

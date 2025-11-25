@@ -23,7 +23,8 @@ public class Kernel : Sys.Kernel
 {
     internal DateTime MomentOfStart;
     internal string VersionInfo = "0.9";
-    internal UsersConfig UsersConf = new UsersConfig();
+    internal UsersConfig UsersConf = new UsersConfig(); //should be loaded from file, but can't in vbox
+    internal PasswordPolicy Policy = new PasswordPolicy(); //should be loaded from file, but can't in vbox
     internal int CurrentUser;
     internal bool Logged_In = false;
     internal Random Rand = new Random(DateTime.Now.Millisecond);
@@ -57,6 +58,8 @@ public class Kernel : Sys.Kernel
         fs = new Sys.FileSystem.CosmosVFS();
         Sys.FileSystem.VFS.VFSManager.RegisterVFS(fs);
         Global.PIT.Wait(1000);
+        //der untere teil geht nicht unter vbox, daher ist er vorerst weg
+        
         //LOCKED = !InitSystem.IsSystemCompleted(SYSTEMPATH, fs);
         //if (LOCKED)
         //{
@@ -144,7 +147,7 @@ public class Kernel : Sys.Kernel
         while (!Logged_In)
         {
             string username = ConsoleHelpers.ReadLine("Username: ", Color.White);
-            string password = ConsoleHelpers.ReadPassword("Password: ", Color.White, '•');
+            string password = ConsoleHelpers.ReadPassword("Password: ");
 
             // Try to find user
             var user = UsersConf.Users.FirstOrDefault(u => u.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
