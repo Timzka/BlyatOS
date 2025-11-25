@@ -133,6 +133,33 @@ namespace BlyatOS.Library.Functions
             }
         }
 
+        public static string ChangeRoot(FileSystemHelpers fsh)
+        {
+            var disks = VFSManager.GetDisks();
+
+            if (disks.Count == 0)
+                return @"0:\";
+
+            ConsoleHelpers.WriteLine("Availabe Drives:");
+
+            for (int i = 0; i < disks.Count; i++)
+            {
+                var fsType = disks[i].GetType().Name;
+                ConsoleHelpers.WriteLine($"{i}: {fsh.BlockDeviceTypeToString(disks[i].Host.Type)}");
+            }
+
+            ConsoleHelpers.Write("Choose Drive: [number]; example: type 1 to go to 1:\\");
+            string input = ConsoleHelpers.ReadLine();
+
+            if (int.TryParse(input, out int index) && index >= 0 && index < disks.Count)
+                return $@"{index}:\";
+
+            ConsoleHelpers.WriteLine("Ungültige Auswahl.");
+            return @"0:\";
+        }
+
+
+
         public static void ReadFile(string rawpath, string CurrentDirectory)
         {
             string path = IsAbsolute(rawpath)

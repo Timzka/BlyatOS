@@ -227,6 +227,12 @@ public class KernelParser
                         ConsoleHelpers.WriteLine($"Changed directory to '" + kernel.CurrentDirectory + "'");
                         break;
                     }
+                case "cdisk":
+                    {
+                        kernel.CurrentDirectory = FileFunctions.ChangeRoot(kernel.fsh);
+                        ConsoleHelpers.WriteLine("Changed directory to disk: " + kernel.CurrentDirectory);
+                        break;
+                    }
                 case "delfile":
                     {
                         if (commandArgs.Count == 0)

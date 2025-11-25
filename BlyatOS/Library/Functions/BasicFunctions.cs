@@ -68,6 +68,7 @@ public class BasicFunctions
                     new Commands("ls", "show all directories and files in Currentpath"),
                     new Commands("dir", "show all directories in Currentpath"),
                     new Commands("cd [dir]", "change currentpath to a directory withing the previous. Use \"cd ..\" to go back"),
+                    new Commands("cdisk", "change current disk if multiple are available"),
                     new Commands("pwd", "show current directory"),
                     new Commands("findkusche [filename]", "finds a file for you, giving you its path on any disk and any directory, example: \"findkusche kudzu.txt\""),
                     new Commands("fsinfo", "get information about the file system"),
