@@ -59,6 +59,8 @@ public class BasicFunctions
                     new Commands("initsystem", "re-initialize critical system files !they will be reset!"),
                     new Commands("runtime", "show runtime"),
                     new Commands("reboot", "reboot system"),
+                    new Commands("getdriver", "get audio driver"),
+                    new Commands("showbmpbig [filepath] [width] [height]", "display a bmp image in BIG"),
                     new Commands("clearScreen | clear | cls", "clear the console"),
                     new Commands("userManagement", "access user management functions"),
                     new Commands("blyatgames", "access games (tetris, wiseman, OOGA)"),

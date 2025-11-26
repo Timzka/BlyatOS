@@ -59,23 +59,17 @@ public class KernelParser
                         BasicFunctions.Help(page, BasicFunctions.ListType.Main);
                         break;
                     }
-                case "musictest":
-                    {
-                        AudioHandler.Play(Audio.BlyatTraktor);
-                        break;
-                    }
                 case "getdriver":
                     {
                         AudioHandler.GetDriverInfo();
                         break;
                     }
-                case "stopmusic":
-                    {
-                        AudioHandler.Stop();
-                        break;
-                    }
                 case "showbmpbig": //temp --> way to resize bitmaps easily
                     {
+                        if(commandArgs.Count != 3)
+                            throw new GenericException("Usage: showbmpbig <path> <width> <height>");
+                        if(!uint.TryParse(commandArgs[1], out _) || !uint.TryParse(commandArgs[2], out _))
+                            throw new GenericException("Width and Height must be valid unsigned integers.");
                         string path = IsAbsolute(commandArgs[0])
                             ? commandArgs[0]
                             : PathCombine(kernel.CurrentDirectory, commandArgs[0]).TrimEnd('\\');
