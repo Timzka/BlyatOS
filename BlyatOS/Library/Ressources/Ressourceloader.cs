@@ -23,6 +23,8 @@ public static class Ressourceloader
     public static byte[] HighScoreWavBytes;
     [ManifestResourceStream(ResourceName = defaultPathAudio + "GameOver.wav")]
     public static byte[] GameOverWavBytes;
+    [ManifestResourceStream(ResourceName = defaultPathAudio + "blyattraktor.wav")]
+    public static byte[] BlyatTraktorBytes;
 
     //BMP
     private const string defaultPathBMP = "BlyatOS.Library.Ressources.FilesBMP.";
@@ -30,6 +32,8 @@ public static class Ressourceloader
     public static byte[] TetrisLogoBmpBytes;
     [ManifestResourceStream(ResourceName = defaultPathBMP + "BlyatLogo.bmp")]
     public static byte[] BlyatLogoBmpBytes;
+    [ManifestResourceStream(ResourceName = defaultPathBMP + "blyattraktor.bmp")]
+    public static byte[] TraktorBytes;
     public static void InitRessources()
     {
         try
@@ -44,11 +48,15 @@ public static class Ressourceloader
             Audio.HighScore = MemoryAudioStream.FromWave(HighScoreWavBytes);
 
             Console.WriteLine("Loading GameOver audio...");
-            Audio.GameOver = MemoryAudioStream.FromWave(GameOverWavBytes);
+            Audio.GameOver = MemoryAudioStream.FromWave(GameOverWavBytes); 
+            
+            Console.WriteLine("Loading BlyatTraktor audio...");
+            Audio.BlyatTraktor = MemoryAudioStream.FromWave(BlyatTraktorBytes);
 
             Console.WriteLine("Loading BMP resources...");
             BMP.TetrisLogo = new Bitmap(TetrisLogoBmpBytes);
             BMP.BlyatLogo = ImageHelpers.ConvertBMP(new Bitmap(BlyatLogoBmpBytes));
+            BMP.Traktor = ImageHelpers.ConvertBMP(new Bitmap(TraktorBytes));
 
             Console.WriteLine("All resources loaded!");
         }

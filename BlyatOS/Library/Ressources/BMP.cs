@@ -11,4 +11,5 @@ public static class BMP
 {
     public static Bitmap TetrisLogo;
     public static Bitmap BlyatLogo;
+    public static Bitmap Traktor;
 }

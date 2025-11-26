@@ -61,7 +61,7 @@ public class KernelParser
                     }
                 case "musictest":
                     {
-                        AudioHandler.Play(Audio.MainMusic);
+                        AudioHandler.Play(Audio.BlyatTraktor);
                         break;
                     }
                 case "getdriver":

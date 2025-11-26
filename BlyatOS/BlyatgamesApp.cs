@@ -59,36 +59,25 @@ namespace BlyatOS
                             break;
                         }
 
-                    case "OOGA":
+                    case "TRAKTOR":
                         {
-                            string path = arr.Length > 1 ? arr[1] : "";
-                            ConsoleHelpers.ClearConsole();
 
                             var canvas = DisplaySettings.Canvas;
                             canvas.Clear(Color.Black);
 
-                            Bitmap bitmap;
-                            if (path != "" && File.Exists(path))
-                                bitmap = ImageHelpers.LoadBMP(path);
-                            else
-                                bitmap = BMP.BlyatLogo;
-
+                            Bitmap bitmap = BMP.Traktor;
+                            AudioHandler.Play(Audio.BlyatTraktor);
                             int screenWidth = (int)DisplaySettings.ScreenWidth;
                             int screenHeight = (int)DisplaySettings.ScreenHeight;
-
-                            while (true)
+                            int x = (screenWidth - (int)bitmap.Width) / 2;
+                            int y = (screenHeight - (int)bitmap.Height) / 2;
+                            canvas.DrawImage(bitmap, x, y);
+                            canvas.Display();
+                            while(AudioHandler.IsPlaying)
                             {
-                                if (Cosmos.System.KeyboardManager.TryReadKey(out var _))
-                                    break;
-
-                                int x = rand.Next(0, Math.Max(1, screenWidth - (int)bitmap.Width));
-                                int y = rand.Next(0, Math.Max(1, screenHeight - (int)bitmap.Height));
-
-                                canvas.DrawImage(bitmap, x, y);
-                                canvas.Display();
-                                Global.PIT.Wait(500);
+                                Global.PIT.Wait(1000);
                             }
-
+                            AudioHandler.Stop();
                             canvas.Clear(DisplaySettings.BackgroundColor);
                             break;
                         }

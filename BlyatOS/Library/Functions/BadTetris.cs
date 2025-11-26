@@ -674,7 +674,7 @@ public class BadTetris
         bool locked = false;
         bool quit = false;
         bool moved = false;
-        int gravitySpeed = 0;
+        int gravitySpeed = GRAVITY_DELAY;
         ulong frameStartTime = 0, frameEndTime = 0, frameTime = 0, waitTime = 0;
 
         while (running)
@@ -689,7 +689,6 @@ public class BadTetris
             if (moved) needsRedraw = true;
 
             gravityCounter++;
-            gravitySpeed = (int) Math.Max((GRAVITY_DELAY * Math.Pow(0.95, score / 100.0)), 5);
 
             if (gravityCounter >= gravitySpeed)
             {
@@ -708,6 +707,7 @@ public class BadTetris
             {
                 int lines = CheckBoard();
                 score += lines * (100) + (lines == 4 ? 1000 : 0);
+                gravitySpeed = (int)Math.Max((GRAVITY_DELAY * Math.Pow(0.96056, score / 1000.0)), 5);
                 currentBlock = SpawnTetromino(nextType);
                 nextType = GetRandomTetrominoType();
                 if (!CanSpawn(currentBlock.Type))

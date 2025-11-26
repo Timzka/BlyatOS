@@ -89,7 +89,7 @@ public class BasicFunctions
                     new Commands("highscores", "shows tetris highscores"),
                     new Commands("resethighscores", "resets tetris highscores"),
                     new Commands("wiseman", "get a motivational message"),
-                    new Commands("OOGA <filepath>", "jumpscare"),
+                    new Commands("TRAKTOR", "you might guess what it does"),
                     new Commands("screensave <number> <filepath>", "animated screensaver with multiple bouncing images (default: 1)"),
                     new Commands("mainMenu | exit", "return to main menu")
                 };
