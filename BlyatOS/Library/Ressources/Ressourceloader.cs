@@ -25,6 +25,8 @@ public static class Ressourceloader
     public static byte[] GameOverWavBytes;
     [ManifestResourceStream(ResourceName = defaultPathAudio + "blyattraktor.wav")]
     public static byte[] BlyatTraktorBytes;
+    [ManifestResourceStream(ResourceName = defaultPathAudio + "narkotikkal.wav")]
+    public static byte[] NarkotikKalBytes;
 
     //BMP
     private const string defaultPathBMP = "BlyatOS.Library.Ressources.FilesBMP.";
@@ -52,6 +54,9 @@ public static class Ressourceloader
             
             Console.WriteLine("Loading BlyatTraktor audio...");
             Audio.BlyatTraktor = MemoryAudioStream.FromWave(BlyatTraktorBytes);
+
+            Console.WriteLine("Loading NarkotikKal audio...");
+            Audio.NarkotikKal = MemoryAudioStream.FromWave(NarkotikKalBytes);
 
             Console.WriteLine("Loading BMP resources...");
             BMP.TetrisLogo = new Bitmap(TetrisLogoBmpBytes);

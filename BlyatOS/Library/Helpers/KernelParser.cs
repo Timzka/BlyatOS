@@ -64,6 +64,11 @@ public class KernelParser
                         AudioHandler.GetDriverInfo();
                         break;
                     }
+                case "hardbass":
+                    {
+                        AudioHandler.Play(Audio.NarkotikKal);
+                        break;
+                    }
                 case "showbmpbig": //temp --> way to resize bitmaps easily
                     {
                         if(commandArgs.Count != 3)
@@ -78,6 +83,9 @@ public class KernelParser
                         var bmp = new Bitmap(uint.Parse(commandArgs[1]), uint.Parse(commandArgs[2]), ColorDepth.ColorDepth32);
                         bmp.RawData = data;
                         DisplaySettings.Canvas.DrawImage(bmp, 0, 0);
+                        DisplaySettings.Canvas.Display();
+                        ConsoleHelpers.ReadKey();
+                        ConsoleHelpers.ClearConsole();
                         break;
                     }
                 case "changecolor":
@@ -156,6 +164,7 @@ public class KernelParser
                         break;
                     }
                 case "lock":
+                case "logout":
                     {
                         ConsoleHelpers.WriteLine("Logging out...");
                         Global.PIT.Wait(1000);

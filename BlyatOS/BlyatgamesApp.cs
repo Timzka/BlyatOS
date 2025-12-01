@@ -27,9 +27,8 @@ namespace BlyatOS
             do
             {
                 ConsoleHelpers.WriteLine();
-                ConsoleHelpers.Write("BlyatGames> ");
 
-                var userInput = ConsoleHelpers.ReadLine();
+                var userInput = ConsoleHelpers.ReadLine("BlyatGames>");
 
                 if (string.IsNullOrWhiteSpace(userInput))
                     continue;

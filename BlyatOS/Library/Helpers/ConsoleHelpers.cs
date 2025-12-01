@@ -68,7 +68,7 @@ namespace BlyatOS.Library.Helpers
                 _drawCallsSinceGC = 0;
 
                 int collected = Heap.Collect();
-                WriteLine($"[Garbage Collector] Collected {collected} objects.", Color.Gray);
+                //WriteLine($"[Garbage Collector] Collected {collected} objects.", Color.Gray);
             }
             catch
             {

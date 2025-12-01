@@ -58,6 +58,7 @@ public class BasicFunctions
                     new Commands("echo", "echo text"),
                     new Commands("initsystem", "re-initialize critical system files !they will be reset!"),
                     new Commands("runtime", "show runtime"),
+                    new Commands("hardbass", "play hardbass music like real gopnik"),
                     new Commands("reboot", "reboot system"),
                     new Commands("getdriver", "get audio driver"),
                     new Commands("showbmpbig [filepath] [width] [height]", "display a bmp image in BIG"),

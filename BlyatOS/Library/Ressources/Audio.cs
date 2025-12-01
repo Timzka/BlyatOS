@@ -17,4 +17,5 @@ public static class Audio
     public static MemoryAudioStream HighScore;
     public static MemoryAudioStream GameOver;
     public static MemoryAudioStream BlyatTraktor;
+    public static MemoryAudioStream NarkotikKal;
 }
